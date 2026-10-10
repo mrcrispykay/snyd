@@ -14,6 +14,8 @@ Danish bar games for the whole table, played with everyone on their own phone.
 | Gris | 1–10 | Roll one die (or two) as long as you dare. A 1 loses the turn. First to 100. |
 | Hesteløb | 2–12 | The four aces race up a track as cards are turned. Bet sips on a horse. |
 | Kongens kop | 2–12 | Draw a card and follow its rule. The fourth king drinks the cup. Card rules are editable. |
+| Bussen | 2–10 | Four guesses build your hand, the pyramid hands out sips, the player with most cards left rides the bus. |
+| Snyd med kort | 3–8 | Cheat: play cards face down claiming the next rank. Anyone can call snyd. Empty your hand to win. |
 | Mest sandsynligt | 3–12 | Secret vote: who’s most likely to…? Most votes drinks. Add your own prompts. |
 | Jeg har aldrig | 2–12 | Never have I ever: answer in secret, then the answers are revealed. Add your own prompts. |
 

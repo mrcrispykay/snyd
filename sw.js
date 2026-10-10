@@ -1,7 +1,7 @@
 // Caches the app shell so it opens instantly. Playing still needs internet (phones connect to each other).
 // Bump VERSION when files change.
-const VERSION = 'bodega-v4';
-const FILES = ['./', 'index.html', 'styles.css', 'manifest.webmanifest', 'js/main.js', 'js/net.js', 'js/table.js', 'js/games/snyd.js', 'js/games/meyer.js', 'js/games/tiotusind.js', 'js/games/cards.js', 'js/games/prompts.js', 'js/games/hestelob.js', 'js/games/kongens-kop.js', 'js/games/mest-sandsynligt.js', 'js/games/jeg-har-aldrig.js', 'js/games/skib.js', 'js/games/gris.js', 'js/games/yatzy.js', 'js/ui/common.js', 'js/ui/snyd.js', 'js/ui/meyer.js', 'js/ui/tiotusind.js', 'js/ui/hestelob.js', 'js/ui/kongens-kop.js', 'js/ui/mest-sandsynligt.js', 'js/ui/jeg-har-aldrig.js', 'js/ui/skib.js', 'js/ui/gris.js', 'js/ui/yatzy.js', 'icons/icon.svg', 'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png'];
+const VERSION = 'bodega-v5';
+const FILES = ['./', 'index.html', 'styles.css', 'manifest.webmanifest', 'js/main.js', 'js/net.js', 'js/table.js', 'js/games/snyd.js', 'js/games/meyer.js', 'js/games/tiotusind.js', 'js/games/cards.js', 'js/games/prompts.js', 'js/games/hestelob.js', 'js/games/kongens-kop.js', 'js/games/mest-sandsynligt.js', 'js/games/jeg-har-aldrig.js', 'js/games/skib.js', 'js/games/gris.js', 'js/games/yatzy.js', 'js/games/bussen.js', 'js/games/snyd-kort.js', 'js/ui/common.js', 'js/ui/snyd.js', 'js/ui/meyer.js', 'js/ui/tiotusind.js', 'js/ui/hestelob.js', 'js/ui/kongens-kop.js', 'js/ui/mest-sandsynligt.js', 'js/ui/jeg-har-aldrig.js', 'js/ui/skib.js', 'js/ui/gris.js', 'js/ui/yatzy.js', 'js/ui/bussen.js', 'js/ui/snyd-kort.js', 'icons/icon.svg', 'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));

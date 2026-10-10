@@ -10,8 +10,10 @@ import * as jegHarAldrig from './games/jeg-har-aldrig.js';
 import * as skib from './games/skib.js';
 import * as gris from './games/gris.js';
 import * as yatzy from './games/yatzy.js';
+import * as bussen from './games/bussen.js';
+import * as snydKort from './games/snyd-kort.js';
 
-export const GAMES = [snyd, meyer, tiotusind, yatzy, skib, gris, hestelob, kongensKop, mestSandsynligt, jegHarAldrig];
+export const GAMES = [snyd, meyer, tiotusind, yatzy, skib, gris, hestelob, kongensKop, bussen, snydKort, mestSandsynligt, jegHarAldrig];
 export const CATEGORIES = [['dice', 'Dice'], ['cards', 'Cards'], ['party', 'Party']];
 export const gameById = Object.fromEntries(GAMES.map((g) => [g.id, g]));
 

@@ -392,3 +392,23 @@ textarea.rule-text, input.rule-text {
 .sheet tr.sum th, .sheet tr.sum td { font: 900 1.2rem var(--font-display); color: var(--amber); border-bottom: 0; }
 .scorebox { appearance: none; min-width: 44px; min-height: 34px; border-radius: 8px; border: 1px solid var(--amber); background: color-mix(in srgb, var(--amber) 16%, transparent); color: var(--fg); font: 700 0.95rem var(--font-body); cursor: pointer; }
 .scorebox.zero { border-color: var(--line); background: transparent; color: var(--muted); }
+
+/* ---------- Bussen ---------- */
+.pcard.mid { width: 40px; height: 56px; border-radius: 6px; }
+.pcard.mid b, .pcard.mid i { font-size: 1rem; }
+.pyramid { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 8px; background: #0f0b08; border: 1px solid var(--line); border-radius: var(--radius); }
+.prow { display: flex; gap: 6px; align-items: center; position: relative; }
+.pval { position: absolute; left: -26px; font: 800 0.9rem var(--font-display); color: var(--amber); }
+.bus { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; }
+.red-suit { color: var(--red); }
+.scoreboard .plast .pcard.mini { margin-left: -6px; }
+
+/* ---------- Snyd med kort ---------- */
+.cups .cardback { width: 7px; height: 11px; border-radius: 2px; background: #a8262c; opacity: 0.9; }
+.cups { flex-wrap: wrap; }
+.fan { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; }
+.pickcard { appearance: none; background: none; border: 0; padding: 0; cursor: pointer; transition: transform 0.1s; border-radius: 8px; }
+.pickcard:disabled { cursor: default; }
+.pickcard.on { transform: translateY(-10px); }
+.pickcard.on .pcard { outline: 3px solid var(--amber); outline-offset: 1px; }
+.pcard.liar { outline: 3px solid var(--red); outline-offset: 1px; }
