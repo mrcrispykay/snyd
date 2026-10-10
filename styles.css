@@ -233,3 +233,67 @@ p { margin: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) { .switch span { transition: none; } }
+
+/* ---------- game menu ---------- */
+.glyph { display: inline-flex; gap: 3px; flex: none; }
+.glyph .die { width: 22px; height: 22px; }
+.glyph .die:nth-child(2) { transform: translateY(5px) rotate(8deg); }
+.menu-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.menu-list li { display: flex; gap: 14px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+.menu-list li:first-child { border-top: 0; }
+.menu-list small, .game small { display: block; color: var(--muted); font-size: 0.85rem; }
+.menu-list b, .game b { font: 800 1.35rem/1.1 var(--font-display); letter-spacing: 0.02em; }
+.games { display: flex; flex-direction: column; gap: 8px; }
+.game {
+  appearance: none; display: grid; grid-template-columns: 78px minmax(0, 1fr) auto; gap: 12px; align-items: center;
+  text-align: left; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 12px; cursor: pointer; font: inherit;
+}
+.game.on { border-color: var(--amber); background: color-mix(in srgb, var(--amber) 9%, var(--bg)); }
+.game:disabled { cursor: default; }
+.game:disabled:not(.on) { opacity: 0.6; }
+.game:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+.players-range { font-size: 0.75rem; color: var(--muted); white-space: nowrap; }
+.players-range::after { content: " players"; }
+.hostmenu { color: var(--muted); font-size: 0.85rem; }
+.hostmenu summary { cursor: pointer; padding: 8px 0; }
+
+/* ---------- Meyer ---------- */
+.lives { display: flex; gap: 4px; }
+.lives i { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--red); }
+.lives i.on { background: var(--red); }
+.claim-dice { display: flex; justify-content: center; gap: 6px; font-size: 2rem; margin-top: 4px; }
+.cup-big {
+  appearance: none; display: grid; place-items: center; align-self: center;
+  width: 150px; height: 170px; border: 0; padding: 0; margin: 4px auto;
+  background: linear-gradient(180deg, #5a3a26, #3a2416);
+  clip-path: polygon(14% 0, 86% 0, 100% 100%, 0 100%);
+  border-radius: 6px; color: var(--fg); font: 700 1rem var(--font-body);
+}
+.cup-big.tap { cursor: pointer; }
+.cup-big span { margin-top: 30px; }
+.cup-big.shaken { animation: shake 0.5s ease-in-out 1; }
+@keyframes shake { 25% { transform: rotate(-6deg); } 50% { transform: rotate(5deg); } 75% { transform: rotate(-3deg); } }
+.claims { display: grid; grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr)); gap: 6px; max-height: 15rem; overflow-y: auto; }
+.claim {
+  appearance: none; min-height: 44px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--fg-2);
+  font: 800 1.1rem var(--font-display); letter-spacing: 0.03em; cursor: pointer;
+}
+.claim.truth { border-color: var(--good); color: var(--fg); }
+.claim.on { background: var(--amber); border-color: var(--amber); color: var(--amber-ink); }
+
+/* ---------- 10.000 ---------- */
+.scoreboard .player { grid-template-areas: "name last" "cups last"; }
+.score { grid-area: last; font: 900 1.6rem var(--font-display); font-variant-numeric: tabular-nums; color: var(--fg-2); }
+.score.lead { color: var(--amber); }
+.event { text-align: center; padding: 10px 12px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); color: var(--fg-2); }
+.event.bust { border-color: color-mix(in srgb, var(--red) 55%, var(--line)); }
+.event.bank { border-color: color-mix(in srgb, var(--good) 45%, var(--line)); }
+.kept { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 12px; }
+.kept-group { display: inline-flex; align-items: center; gap: 3px; }
+.kept-group small { margin-left: 4px; color: var(--amber); font-weight: 700; }
+.die-small { width: 24px; height: 24px; }
+.pickdie { appearance: none; border: 3px solid transparent; border-radius: 16px; background: none; padding: 2px; cursor: pointer; transition: transform 0.1s; }
+.pickdie.on { border-color: var(--amber); transform: translateY(-6px); }
+.hand-dice:has(.pickdie) { gap: 6px; flex-wrap: nowrap; }
+.pickdie { border-width: 2px; padding: 1px; border-radius: 14px; }
+.pickdie .die { width: 50px; height: 50px; display: block; }

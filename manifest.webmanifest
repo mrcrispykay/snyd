@@ -1,7 +1,7 @@
 {
-  "name": "Snyd",
-  "short_name": "Snyd",
-  "description": "The Danish bluffing dice game, played on everyone's phone.",
+  "name": "Bodega",
+  "short_name": "Bodega",
+  "description": "Danish bar games, played on everyone's phone.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

@@ -1,31 +1,36 @@
-# Snyd
+# Bodega
 
-The Danish bar dice game of bluffing (also called Løgn or Tænkeboks), played with everyone on their own phone.
+Danish bar games for the whole table, played with everyone on their own phone.
 
 **Play:** https://mrcrispykay.github.io/snyd/
 
-## How a game works
-
-1. One person taps **Start a table**. Their phone hosts the game and shows a 4-letter code and a QR code.
-2. Everyone else scans the QR code, or opens the site and types the code.
-3. The host picks the house rules and taps **Start game**.
-
-The host's phone runs the game. The phones connect directly to each other over WebRTC, using the free PeerJS service to find each other. If a direct connection isn't possible, PeerJS relays the traffic. No server or PC is needed, so it works on mobile data at a bar.
-
-**Keep the host's phone on the game screen.** If the host locks the phone or switches apps for long, the others lose the table until the host comes back. Players who drop out, or reload the page, rejoin their seat automatically. Rejoining by typing the same name and code also works. The site keeps the screen awake while you play, where the phone allows it.
-
-## House rules (set in the lobby)
-
-| Setting | Default | |
+| Game | Players | What it is |
 |---|---|---|
-| Dice per player | 4 | 3 to 6 |
-| Ones are wild | on | A 1 counts as the bid face. Ones can't be bid while this is on. |
-| Trappe | on | 1-2, 1-2-3 … using all your dice counts as dice + 1. A lone 1 counts as 2. |
-| Til stede | off | Wilds and trappes only count if at least one real die shows the bid face. |
-| Who drops a die | everyone but the loser | Last with dice loses (Danish style). The alternative: only the loser drops a die, and the last with dice wins (Perudo style). |
-| Lowest opening bid | 1 | |
+| Snyd | 2–10 | Liar's dice: bid on how many dice of a face are on the whole table, or call "Snyd!" |
+| Meyer | 2–12 | Two dice under a cup. Announce your roll, or lie, and pass it on. The next player believes you or lifts the cup. |
+| 10.000 | 1–10 | Push-your-luck with five dice (Grådig/Farkle). Bank your points before a roll scores nothing. |
 
-A bid must be more dice (any face), or the same number of dice with a higher face. When a bid is called and the count equals the bid, the bid holds.
+## How it works
+
+1. One person taps **Start a table**. Their phone hosts and shows a 4-letter code and a QR code.
+2. Everyone else scans the QR code, or opens the site and types the code.
+3. The host picks a game from the menu, sets the house rules and taps **Start**. After a game, the host can play again or go back to the menu. Nobody has to rejoin.
+
+The host's phone runs the games. The phones connect directly to each other over WebRTC, using the free PeerJS service to find each other. If a direct connection isn't possible, PeerJS relays the traffic. No server or PC is needed, so it works on mobile data at a bar.
+
+**Keep the host's phone on the game screen.** If the host locks the phone or switches apps for long, the others lose the table until the host comes back. Players who drop out or reload rejoin their seat automatically, and rejoining with the same name and code also works. Anyone who arrives mid-game watches and gets dealt into the next one.
+
+## House rules (toggles in the lobby)
+
+**Snyd:** dice per player (4); ones wild (on); trappe, where 1-2-3… counts as dice + 1 (on); til stede (off); who drops a die: everyone but the loser, so the last with dice loses (default), or only the loser, so the last with dice wins; lowest opening bid (1).
+
+**Meyer:** lives (6); *det eller derover*, where the same roll is allowed (on); a lift on a Meyer costs double (on); pass blind (on); 3-2 is skål, where everyone drinks and the round restarts (on); the game ends with the first player out losing (default) or the last one standing winning.
+
+Meyer ranking, highest first: Meyer (1-2), Lille-Meyer (1-3), pairs 6-6 down to 1-1, then 65, 64 … 32.
+
+**10.000:** play to (10.000); points to get on the board in one turn (400); straights 2.000 (on); full house 2.500 (on); hot dice (on).
+
+Scores: 1 = 100, 5 = 50, three of a kind = face × 100 (three 1s = 1.000), four of a kind 1.500, five of a kind 2.000. When someone reaches the target, everyone else gets one last turn.
 
 ## Development
 
@@ -41,11 +46,13 @@ To test multiplayer on one computer, open the site in two tabs. Each tab is a se
 npm test
 ```
 
-The tests cover the rules engine: counting with wild ones, trappe and til stede, bid order, round results under both dice-loss rules, seat reclaiming, and full random games.
+- `js/table.js`: the table (seats, lobby, game choice, rules). It runs the selected game.
+- `js/games/*.js`: one pure rules engine per game, with `start`, `apply`, `view` and `removePlayer`. These run in the host's browser and in the tests.
+- `js/ui/*.js`: one screen per game, with `render`, `handle`, `howTo` and `rulesSummary`.
+- `js/net.js`: PeerJS hosting and joining, with heartbeats and reconnects.
+- `js/main.js`: the home screen, lobby, game menu and wiring.
+- `sw.js`: caches the app shell. Bump `VERSION` when files change.
 
-- `js/engine.js` holds the rules and game state. It's pure functions, run by the host's browser and by the tests.
-- `js/net.js` handles PeerJS hosting and joining, with heartbeats and reconnects.
-- `js/main.js` contains the screens.
-- `sw.js` caches the app shell. Bump `VERSION` when files change.
+To add a game, write `js/games/<game>.js` and `js/ui/<game>.js`, then register them in `GAMES` in `table.js`, in `UIS` in `main.js`, and in the file list in `sw.js`.
 
 Every push to `main` runs the tests and deploys to GitHub Pages.

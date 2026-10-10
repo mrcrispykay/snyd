@@ -1,6 +1,13 @@
-// Snyd game engine. Pure functions only: the host's browser runs these, and the tests run them in Node.
+// Snyd (Løgn, Tænkeboks): bid on how many dice of a face are on the whole table, or call "Snyd!".
+// Pure game module: the table engine calls start/apply/view; tests run it in Node.
 
-export const DEFAULT_RULES = {
+export const id = 'snyd';
+export const name = 'Snyd';
+export const tagline = 'Bluff about the dice on the whole table.';
+export const minPlayers = 2;
+export const maxPlayers = 10;
+
+export const defaults = {
   dicePerPlayer: 4,
   onesWild: true, // ones count as any face (and can't be bid on their own)
   trappe: true, // a run 1-2-3… using all of a player's dice counts as (dice + 1) of the bid face
@@ -10,7 +17,7 @@ export const DEFAULT_RULES = {
   minOpeningCount: 1,
 };
 
-export const RULE_INFO = {
+export const ruleInfo = {
   dicePerPlayer: { label: 'Dice per player', options: [3, 4, 5, 6] },
   onesWild: { label: 'Ones are wild', help: 'A 1 counts as whatever face is bid. Ones can’t be bid on their own.' },
   trappe: { label: 'Trappe', help: '1-2, 1-2-3 … using all your dice counts as your number of dice + 1 of any face.' },
@@ -26,25 +33,6 @@ export const RULE_INFO = {
 };
 
 const rollDie = (rand) => 1 + Math.floor(rand() * 6);
-
-export function newGame({ code, hostId, rules = {} }) {
-  return {
-    code,
-    hostId,
-    rules: { ...DEFAULT_RULES, ...rules },
-    phase: 'lobby', // lobby | bidding | reveal | over
-    players: [],
-    round: 0,
-    turn: null,
-    starter: null,
-    bid: null,
-    history: [],
-    reveal: null,
-    result: null,
-    version: 0,
-  };
-}
-
 export const activePlayers = (s) => s.players.filter((p) => !p.out);
 
 /** Is `dice` a trappe: exactly 1, 2, …, n in some order? */
@@ -101,9 +89,9 @@ export function lowestBid(state) {
   return higherFace ? { count: state.bid.count, face: higherFace } : { count: state.bid.count + 1, face: faces[0] };
 }
 
-function nextActiveAfter(state, id) {
+function nextActiveAfter(state, pid) {
   const n = state.players.length;
-  const start = state.players.findIndex((p) => p.id === id);
+  const start = state.players.findIndex((p) => p.id === pid);
   for (let k = 1; k <= n; k++) {
     const p = state.players[(start + k) % n];
     if (!p.out) return p.id;
@@ -123,64 +111,28 @@ function startRound(state, starterId, rand) {
   state.turn = starter;
 }
 
-/**
- * Applies one player action and returns the new state (the input is not modified).
- * Throws an Error with a readable message when the action isn't allowed.
- */
-export function apply(prev, playerId, action, rand = Math.random) {
-  const s = structuredClone(prev);
-  const me = s.players.find((p) => p.id === playerId);
-  const isHost = playerId === s.hostId;
-  const fail = (msg) => { throw new Error(msg); };
+export function start(playerIds, rules, rand = Math.random) {
+  const s = {
+    rules: { ...defaults, ...rules },
+    players: playerIds.map((pid) => ({ id: pid, count: 0, dice: [], out: false })),
+    phase: 'bidding',
+    round: 0,
+    turn: null,
+    starter: null,
+    bid: null,
+    history: [],
+    reveal: null,
+    result: null,
+  };
+  for (const p of s.players) p.count = s.rules.dicePerPlayer;
+  startRound(s, playerIds[Math.floor(rand() * playerIds.length)], rand);
+  return s;
+}
 
+/** Applies a game action to `s` in place. Throws an Error with a readable message if not allowed. */
+export function apply(s, playerId, action, rand = Math.random) {
+  const fail = (msg) => { throw new Error(msg); };
   switch (action.type) {
-    case 'join': {
-      const name = String(action.name || '').trim().slice(0, 20) || 'Player';
-      if (me) { me.name = name; me.connected = true; break; }
-      // Someone rejoining from a new tab takes back their seat by name.
-      const seat = s.players.find((p) => !p.connected && p.name.toLowerCase() === name.toLowerCase());
-      if (seat) { seat.id = playerId; seat.connected = true; if (s.hostId === seat.id) s.hostId = playerId; break; }
-      if (s.phase !== 'lobby') fail('This game has already started. Ask the host to restart it.');
-      if (s.players.length >= 10) fail('The table is full (10 players).');
-      s.players.push({ id: playerId, name, count: 0, dice: [], out: false, connected: true });
-      break;
-    }
-    case 'connected': {
-      if (me) me.connected = !!action.value;
-      break;
-    }
-    case 'rules': {
-      if (!isHost) fail('Only the host can change the rules.');
-      if (s.phase !== 'lobby' && s.phase !== 'over') fail('Rules can only change between games.');
-      s.rules = { ...s.rules, ...action.rules };
-      break;
-    }
-    case 'remove': {
-      if (!isHost) fail('Only the host can remove players.');
-      const target = s.players.find((p) => p.id === action.id);
-      if (!target || target.id === s.hostId) break;
-      if (s.phase === 'lobby' || s.phase === 'over') {
-        s.players = s.players.filter((p) => p.id !== action.id);
-      } else {
-        // Mid-game: they leave the table; the round restarts without them.
-        target.out = true; target.count = 0; target.dice = []; target.left = true;
-        const left = activePlayers(s);
-        if (left.length <= 1) { s.phase = 'over'; s.result = { reason: 'left', remaining: left.map((p) => p.id) }; break; }
-        startRound(s, s.turn === target.id ? nextActiveAfter(s, target.id) : s.turn, rand);
-      }
-      break;
-    }
-    case 'start': {
-      if (!isHost) fail('Only the host can start.');
-      if (s.phase !== 'lobby' && s.phase !== 'over') fail('The game is already running.');
-      if (s.players.length < 2) fail('You need at least two players.');
-      for (const p of s.players) { p.count = s.rules.dicePerPlayer; p.out = false; p.left = false; p.dice = []; }
-      s.result = null;
-      s.round = 0;
-      const first = s.players[Math.floor(rand() * s.players.length)].id;
-      startRound(s, first, rand);
-      break;
-    }
     case 'bid': {
       if (s.phase !== 'bidding') fail('Not bidding right now.');
       if (s.turn !== playerId) fail('It’s not your turn.');
@@ -200,20 +152,17 @@ export function apply(prev, playerId, action, rand = Math.random) {
       const { total, per } = countTable(hands, s.bid.face, s.rules);
       const holds = total >= s.bid.count;
       const loser = holds ? playerId : s.bid.by;
-      const before = Object.fromEntries(s.players.map((p) => [p.id, p.count]));
       for (const p of activePlayers(s)) {
         const drops = s.rules.diceLoss === 'loser' ? p.id === loser : p.id !== loser;
         if (drops) { p.count -= 1; if (p.count <= 0) { p.count = 0; p.out = true; } }
       }
-      s.reveal = { bid: s.bid, caller: playerId, total, holds, loser, hands: per, before };
+      s.reveal = { bid: s.bid, caller: playerId, total, holds, loser, hands: per };
       s.phase = 'reveal';
       s.turn = null;
       const left = activePlayers(s);
       if (left.length <= 1) {
         s.phase = 'over';
-        s.result = s.rules.diceLoss === 'loser'
-          ? { winner: left[0]?.id ?? null }
-          : { loser: left[0]?.id ?? null };
+        s.result = s.rules.diceLoss === 'loser' ? { winner: left[0]?.id ?? null } : { loser: left[0]?.id ?? null };
       }
       break;
     }
@@ -222,30 +171,28 @@ export function apply(prev, playerId, action, rand = Math.random) {
       startRound(s, s.reveal.loser, rand);
       break;
     }
-    case 'lobby': {
-      if (!isHost) fail('Only the host can do that.');
-      s.phase = 'lobby';
-      s.players = s.players.filter((p) => !p.left);
-      for (const p of s.players) { p.count = 0; p.dice = []; p.out = false; }
-      s.bid = null; s.history = []; s.reveal = null; s.result = null; s.turn = null;
-      break;
-    }
     default:
       fail('Unknown action.');
   }
-  s.version += 1;
   return s;
 }
 
-/** What one player is allowed to see: their own dice, and everyone's only at the reveal. */
-export function viewFor(state, playerId) {
-  const showAll = state.phase === 'reveal' || state.phase === 'over';
+/** A player leaves mid-game: the round restarts without them. Returns false if the game can't go on. */
+export function removePlayer(s, pid, rand = Math.random) {
+  const p = s.players.find((x) => x.id === pid);
+  if (!p) return true;
+  const wasTurn = s.turn;
+  p.out = true; p.count = 0; p.dice = []; p.left = true;
+  if (activePlayers(s).length <= 1) return false;
+  startRound(s, wasTurn === pid || !wasTurn ? nextActiveAfter(s, pid) : wasTurn, rand);
+  return true;
+}
+
+/** What one player may see: their own dice, and everyone's only at the reveal. */
+export function view(s, playerId) {
+  const showAll = s.phase === 'reveal' || s.phase === 'over';
   return {
-    ...state,
-    you: playerId,
-    players: state.players.map((p) => ({
-      ...p,
-      dice: p.id === playerId ? p.dice : showAll ? p.dice : p.dice.map(() => 0),
-    })),
+    ...s,
+    players: s.players.map((p) => ({ ...p, dice: p.id === playerId || showAll ? p.dice : p.dice.map(() => 0) })),
   };
 }

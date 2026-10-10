@@ -1,7 +1,7 @@
 // Caches the app shell so it opens instantly. Playing still needs internet (phones connect to each other).
 // Bump VERSION when files change.
-const VERSION = 'snyd-v1';
-const FILES = ['./', 'index.html', 'styles.css', 'manifest.webmanifest', 'js/main.js', 'js/engine.js', 'js/net.js', 'icons/icon.svg', 'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png'];
+const VERSION = 'bodega-v2';
+const FILES = ['./', 'index.html', 'styles.css', 'manifest.webmanifest', 'js/main.js', 'js/net.js', 'js/table.js', 'js/games/snyd.js', 'js/games/meyer.js', 'js/games/tiotusind.js', 'js/ui/common.js', 'js/ui/snyd.js', 'js/ui/meyer.js', 'js/ui/tiotusind.js', 'icons/icon.svg', 'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));
