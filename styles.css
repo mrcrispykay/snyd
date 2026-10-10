@@ -412,3 +412,23 @@ textarea.rule-text, input.rule-text {
 .pickcard.on { transform: translateY(-10px); }
 .pickcard.on .pcard { outline: 3px solid var(--amber); outline-offset: 1px; }
 .pcard.liar { outline: 3px solid var(--red); outline-offset: 1px; }
+
+/* ---------- Sjavs ---------- */
+.sjavs-score { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.sjavs-score .team { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; min-width: 0; }
+.sjavs-score .team.mine { border-color: var(--amber); }
+.sjavs-score small { color: var(--fg-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sjavs-score b { font: 900 1.8rem var(--font-display); color: var(--amber); }
+.sjavs-table {
+  display: grid; grid-template-columns: 1fr 1.1fr 1fr; grid-template-rows: auto auto auto; gap: 6px;
+  grid-template-areas: ". top ." "left mid right" ". bottom .";
+  background: radial-gradient(circle at 50% 50%, #234030 0%, #16281e 70%); border-radius: var(--radius); padding: 10px; border: 1px solid #2c4a37;
+}
+.spot { display: flex; flex-direction: column; align-items: center; gap: 4px; min-height: 84px; justify-content: center; border-radius: 10px; padding: 4px; }
+.spot.top { grid-area: top; } .spot.left { grid-area: left; } .spot.right { grid-area: right; } .spot.bottom { grid-area: bottom; }
+.spot.active { background: color-mix(in srgb, var(--amber) 16%, transparent); }
+.sname { font-weight: 700; font-size: 0.85rem; text-align: center; overflow-wrap: anywhere; }
+.ccount { font-size: 0.75rem; color: var(--fg-2); }
+.center-info { grid-area: mid; display: grid; place-items: center; text-align: center; font: 800 1rem var(--font-display); color: var(--fg); }
+.pickcard.legal .pcard { box-shadow: 0 0 0 2px color-mix(in srgb, var(--amber) 55%, transparent); }
+.pickcard:disabled .pcard { opacity: 0.55; }

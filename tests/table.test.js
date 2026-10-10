@@ -55,9 +55,10 @@ test('removing a player from a two-player game returns to the lobby', () => {
   assert.equal(t.players.length, 1);
 });
 
-test('every game on the menu starts with three players and has a view', () => {
+test('every game on the menu starts with enough players and has a view', () => {
   for (const g of GAMES) {
     let t = applyTable(table(), 'q', { type: 'join', name: 'Q' });
+    if (g.minPlayers > 3) t = applyTable(t, 'r', { type: 'join', name: 'R' });
     t = applyTable(t, 'h', { type: 'pick', gameId: g.id });
     t = applyTable(t, 'h', { type: 'start' }, seeded(6));
     assert.equal(t.phase, 'playing', g.id);

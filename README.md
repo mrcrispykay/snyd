@@ -16,6 +16,7 @@ Danish bar games for the whole table, played with everyone on their own phone.
 | Kongens kop | 2–12 | Draw a card and follow its rule. The fourth king drinks the cup. Card rules are editable. |
 | Bussen | 2–10 | Four guesses build your hand, the pyramid hands out sips, the player with most cards left rides the bus. |
 | Snyd med kort | 3–8 | Cheat: play cards face down claiming the next rank. Anyone can call snyd. Empty your hand to win. |
+| Sjavs | 4 | The Faroese trick-taking game in two teams. Bid trump length, take 61 of 120 points, count down from 24. |
 | Mest sandsynligt | 3–12 | Secret vote: who’s most likely to…? Most votes drinks. Add your own prompts. |
 | Jeg har aldrig | 2–12 | Never have I ever: answer in secret, then the answers are revealed. Add your own prompts. |
 
@@ -28,6 +29,10 @@ Danish bar games for the whole table, played with everyone on their own phone.
 The host's phone runs the games. The phones connect directly to each other over WebRTC, using the free PeerJS service to find each other. If a direct connection isn't possible, PeerJS relays the traffic. No server or PC is needed, so it works on mobile data at a bar.
 
 **Keep the host's phone on the game screen.** If the host locks the phone or switches apps for long, the others lose the table until the host comes back. Players who drop out or reload rejoin their seat automatically, and rejoining with the same name and code also works. Anyone who arrives mid-game watches and gets dealt into the next one.
+
+## Notes on rules
+
+Sjavs follows the Faroese rules on pagat.com. Partners sit opposite each other in the order people joined the table. Sources disagree on a few scoring details, so check the in-game rules against how you play.
 
 ## House rules (toggles in the lobby)
 

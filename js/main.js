@@ -14,11 +14,12 @@ import * as grisUi from './ui/gris.js';
 import * as yatzyUi from './ui/yatzy.js';
 import * as bussenUi from './ui/bussen.js';
 import * as snydKortUi from './ui/snyd-kort.js';
+import * as sjavsUi from './ui/sjavs.js';
 
 const UIS = {
   snyd: snydUi, meyer: meyerUi, 10000: tiotusindUi, hestelob: hestelobUi, 'kongens-kop': kongensKopUi,
   'mest-sandsynligt': mestUi, 'jeg-har-aldrig': aldrigUi, skib: skibUi, gris: grisUi, yatzy: yatzyUi,
-  bussen: bussenUi, 'snyd-kort': snydKortUi,
+  bussen: bussenUi, 'snyd-kort': snydKortUi, sjavs: sjavsUi,
 };
 const GLYPH = {
   snyd: () => [1, 4, 4].map((d) => die(d)).join(''),
@@ -31,6 +32,7 @@ const GLYPH = {
   'kongens-kop': () => card({ r: 13, s: 'D' }, 'mini') + card({ r: 13, s: 'C' }, 'mini'),
   bussen: () => card({ r: 7, s: 'H' }, 'mini') + card({ r: 7, s: 'S' }, 'mini'),
   'snyd-kort': () => card(null, 'mini') + card(null, 'mini'),
+  sjavs: () => card({ r: 12, s: 'C' }, 'mini') + card({ r: 11, s: 'D' }, 'mini'),
   'mest-sandsynligt': () => '<span class="bubble">who?</span>',
   'jeg-har-aldrig': () => '<span class="bubble">never</span>',
 };
