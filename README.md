@@ -9,6 +9,9 @@ Danish bar games for the whole table, played with everyone on their own phone.
 | Snyd | 2–10 | Liar's dice: bid on how many dice of a face are on the whole table, or call "Snyd!" |
 | Meyer | 2–12 | Two dice under a cup. Announce your roll, or lie, and pass it on. The next player believes you or lifts the cup. |
 | 10.000 | 1–10 | Push-your-luck with five dice (Grådig/Farkle). Bank your points before a roll scores nothing. |
+| Yatzy | 1–10 | Scandinavian Yatzy. Everyone plays their own sheet at once, or take turns. |
+| Skib, kaptajn og mandskab | 2–12 | Three rolls to find 6, 5 and 4 in order. The other two dice are the cargo. Smallest cargo drinks. |
+| Gris | 1–10 | Roll one die (or two) as long as you dare. A 1 loses the turn. First to 100. |
 | Hesteløb | 2–12 | The four aces race up a track as cards are turned. Bet sips on a horse. |
 | Kongens kop | 2–12 | Draw a card and follow its rule. The fourth king drinks the cup. Card rules are editable. |
 | Mest sandsynligt | 3–12 | Secret vote: who’s most likely to…? Most votes drinks. Add your own prompts. |

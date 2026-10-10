@@ -366,3 +366,29 @@ textarea.rule-text, input.rule-text {
 .btn.chosen { outline: 3px solid var(--amber); outline-offset: 2px; }
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .names { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-weight: 700; }
+
+/* ---------- Skib, kaptajn og mandskab ---------- */
+.slots { display: grid; grid-template-columns: repeat(3, auto) 1fr; gap: 8px; align-items: end; width: 100%; }
+.slot { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.slot small { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.slot.on small { color: var(--amber); }
+.slot .die { width: 46px; height: 46px; }
+.slot.cargo { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 4px; border-left: 1px dashed var(--line); padding-left: 8px; }
+.slot.cargo small { width: 100%; text-align: center; }
+.slot.cargo .die { width: 40px; height: 40px; }
+
+/* ---------- Gris ---------- */
+.meter { display: block; width: 100%; max-width: 12rem; height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+.meter i { display: block; height: 100%; background: var(--amber); }
+
+/* ---------- Yatzy ---------- */
+.sheet-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.sheet { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 0.9rem; }
+.sheet th, .sheet td { padding: 6px 8px; border-bottom: 1px solid var(--line); text-align: center; white-space: nowrap; }
+.sheet th:first-child { text-align: left; font-weight: 600; color: var(--fg-2); position: sticky; left: 0; background: var(--surface); }
+.sheet tr:first-child th { font-weight: 700; color: var(--fg); max-width: 6rem; overflow: hidden; text-overflow: ellipsis; }
+.sheet .me { background: color-mix(in srgb, var(--amber) 7%, transparent); }
+.sheet tr.sub th, .sheet tr.sub td { color: var(--muted); font-size: 0.8rem; }
+.sheet tr.sum th, .sheet tr.sum td { font: 900 1.2rem var(--font-display); color: var(--amber); border-bottom: 0; }
+.scorebox { appearance: none; min-width: 44px; min-height: 34px; border-radius: 8px; border: 1px solid var(--amber); background: color-mix(in srgb, var(--amber) 16%, transparent); color: var(--fg); font: 700 0.95rem var(--font-body); cursor: pointer; }
+.scorebox.zero { border-color: var(--line); background: transparent; color: var(--muted); }

@@ -64,3 +64,13 @@ test('every game on the menu starts with three players and has a view', () => {
     assert.doesNotThrow(() => JSON.stringify(viewTable(t, 'q')), g.id);
   }
 });
+
+test('a table saved before a game existed still gets that game’s rules', () => {
+  const t = table();
+  delete t.rules.yatzy;
+  let u = applyTable(t, 'h', { type: 'pick', gameId: 'yatzy' });
+  assert.equal(u.rules.yatzy.mode, 'together');
+  assert.equal(viewTable(t, 'h').rules.yatzy.mode, 'together');
+  u = applyTable(u, 'h', { type: 'start' });
+  assert.equal(u.phase, 'playing');
+});

@@ -9,15 +9,21 @@ import * as hestelobUi from './ui/hestelob.js';
 import * as kongensKopUi from './ui/kongens-kop.js';
 import * as mestUi from './ui/mest-sandsynligt.js';
 import * as aldrigUi from './ui/jeg-har-aldrig.js';
+import * as skibUi from './ui/skib.js';
+import * as grisUi from './ui/gris.js';
+import * as yatzyUi from './ui/yatzy.js';
 
 const UIS = {
   snyd: snydUi, meyer: meyerUi, 10000: tiotusindUi, hestelob: hestelobUi, 'kongens-kop': kongensKopUi,
-  'mest-sandsynligt': mestUi, 'jeg-har-aldrig': aldrigUi,
+  'mest-sandsynligt': mestUi, 'jeg-har-aldrig': aldrigUi, skib: skibUi, gris: grisUi, yatzy: yatzyUi,
 };
 const GLYPH = {
   snyd: () => [1, 4, 4].map((d) => die(d)).join(''),
   meyer: () => [2, 1].map((d) => die(d)).join(''),
   10000: () => [1, 5, 5].map((d) => die(d)).join(''),
+  yatzy: () => [6, 6, 6].map((d) => die(d)).join(''),
+  skib: () => [6, 5, 4].map((d) => die(d)).join(''),
+  gris: () => `${die(1)}<span class="bubble">100</span>`,
   hestelob: () => card({ r: 1, s: 'H' }, 'mini') + card({ r: 1, s: 'S' }, 'mini'),
   'kongens-kop': () => card({ r: 13, s: 'D' }, 'mini') + card({ r: 13, s: 'C' }, 'mini'),
   'mest-sandsynligt': () => '<span class="bubble">who?</span>',

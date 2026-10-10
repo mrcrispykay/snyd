@@ -7,8 +7,11 @@ import * as hestelob from './games/hestelob.js';
 import * as kongensKop from './games/kongens-kop.js';
 import * as mestSandsynligt from './games/mest-sandsynligt.js';
 import * as jegHarAldrig from './games/jeg-har-aldrig.js';
+import * as skib from './games/skib.js';
+import * as gris from './games/gris.js';
+import * as yatzy from './games/yatzy.js';
 
-export const GAMES = [snyd, meyer, tiotusind, hestelob, kongensKop, mestSandsynligt, jegHarAldrig];
+export const GAMES = [snyd, meyer, tiotusind, yatzy, skib, gris, hestelob, kongensKop, mestSandsynligt, jegHarAldrig];
 export const CATEGORIES = [['dice', 'Dice'], ['cards', 'Cards'], ['party', 'Party']];
 export const gameById = Object.fromEntries(GAMES.map((g) => [g.id, g]));
 
@@ -29,6 +32,7 @@ export function newTable({ code, hostId }) {
 /** Applies one action and returns a new table (the input is left alone). Throws readable Errors. */
 export function applyTable(prev, pid, action, rand = Math.random) {
   const t = structuredClone(prev);
+  t.rules = allRules(t);
   const me = t.players.find((p) => p.id === pid);
   const isHost = pid === t.hostId;
   const fail = (msg) => { throw new Error(msg); };
@@ -125,6 +129,9 @@ function renameInGame(game, from, to) {
   walk(game);
 }
 
+/** House rules for every game, with defaults filled in for games or settings added since the table was saved. */
+export const allRules = (t) => Object.fromEntries(GAMES.map((g) => [g.id, { ...g.defaults, ...(t.rules?.[g.id] || {}) }]));
+
 export function viewTable(t, pid) {
-  return { ...t, you: pid, game: t.game ? gameById[t.gameId].view(t.game, pid) : null };
+  return { ...t, rules: allRules(t), you: pid, game: t.game ? gameById[t.gameId].view(t.game, pid) : null };
 }
