@@ -3,6 +3,7 @@
 
 export const id = 'snyd';
 export const name = 'Snyd';
+export const category = 'dice';
 export const tagline = 'Bluff about the dice on the whole table.';
 export const minPlayers = 2;
 export const maxPlayers = 10;

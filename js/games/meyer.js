@@ -3,6 +3,7 @@
 
 export const id = 'meyer';
 export const name = 'Meyer';
+export const category = 'dice';
 export const tagline = 'Two dice, one cup, and a lie that has to keep getting bigger.';
 export const minPlayers = 2;
 export const maxPlayers = 12;

@@ -23,3 +23,15 @@ export const dice = (list, cls = '') => list.map((d) => die(d, cls)).join('');
 export function vibrate(ms = 70) {
   try { navigator.vibrate?.(ms); } catch { /* not supported */ }
 }
+
+const GLYPH = { S: '♠', H: '♥', D: '♦', C: '♣' };
+const RANK = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' };
+
+/** A playing card. null draws its back. */
+export function card(c, cls = '') {
+  if (!c) return `<span class="pcard back ${cls}" aria-label="face-down card"></span>`;
+  const red = c.s === 'H' || c.s === 'D';
+  const r = RANK[c.r] || c.r;
+  return `<span class="pcard ${red ? 'red' : ''} ${cls}" aria-label="${r} of ${GLYPH[c.s]}"><b>${r}</b><i>${GLYPH[c.s]}</i></span>`;
+}
+export const suitGlyph = (s) => `<span class="suit ${s === 'H' || s === 'D' ? 'red' : ''}">${GLYPH[s]}</span>`;

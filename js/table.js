@@ -3,8 +3,13 @@
 import * as snyd from './games/snyd.js';
 import * as meyer from './games/meyer.js';
 import * as tiotusind from './games/tiotusind.js';
+import * as hestelob from './games/hestelob.js';
+import * as kongensKop from './games/kongens-kop.js';
+import * as mestSandsynligt from './games/mest-sandsynligt.js';
+import * as jegHarAldrig from './games/jeg-har-aldrig.js';
 
-export const GAMES = [snyd, meyer, tiotusind];
+export const GAMES = [snyd, meyer, tiotusind, hestelob, kongensKop, mestSandsynligt, jegHarAldrig];
+export const CATEGORIES = [['dice', 'Dice'], ['cards', 'Cards'], ['party', 'Party']];
 export const gameById = Object.fromEntries(GAMES.map((g) => [g.id, g]));
 
 export function newTable({ code, hostId }) {
@@ -96,7 +101,7 @@ export function applyTable(prev, pid, action, rand = Math.random) {
     case 'play': {
       if (t.phase !== 'playing') fail('No game is running.');
       if (!t.seated.includes(pid)) fail('You’re watching this game. You can join the next one.');
-      G.apply(t.game, pid, action.action || {}, rand);
+      G.apply(t.game, pid, action.action || {}, rand, { isHost });
       break;
     }
     default:
@@ -111,7 +116,10 @@ function renameInGame(game, from, to) {
   const walk = (o) => {
     if (Array.isArray(o)) { for (let i = 0; i < o.length; i++) { if (o[i] === from) o[i] = to; else walk(o[i]); } return; }
     if (o && typeof o === 'object') {
-      for (const k of Object.keys(o)) { if (o[k] === from) o[k] = to; else walk(o[k]); }
+      for (const k of Object.keys(o)) {
+        if (o[k] === from) o[k] = to; else walk(o[k]);
+        if (k === from) { o[to] = o[k]; delete o[k]; }
+      }
     }
   };
   walk(game);

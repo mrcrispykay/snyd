@@ -3,6 +3,7 @@
 
 export const id = '10000';
 export const name = '10.000';
+export const category = 'dice';
 export const tagline = 'Push your luck with five dice. Stop in time or lose it all.';
 export const minPlayers = 1;
 export const maxPlayers = 10;

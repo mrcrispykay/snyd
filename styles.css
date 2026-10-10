@@ -241,8 +241,8 @@ p { margin: 0; }
 .menu-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .menu-list li { display: flex; gap: 14px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
 .menu-list li:first-child { border-top: 0; }
-.menu-list small, .game small { display: block; color: var(--muted); font-size: 0.85rem; }
-.menu-list b, .game b { font: 800 1.35rem/1.1 var(--font-display); letter-spacing: 0.02em; }
+.menu-list li > span > small, .game > span > small { display: block; color: var(--muted); font-size: 0.85rem; }
+.menu-list li > span > b, .game > span > b { font: 800 1.35rem/1.1 var(--font-display); letter-spacing: 0.02em; }
 .games { display: flex; flex-direction: column; gap: 8px; }
 .game {
   appearance: none; display: grid; grid-template-columns: 78px minmax(0, 1fr) auto; gap: 12px; align-items: center;
@@ -297,3 +297,72 @@ p { margin: 0; }
 .hand-dice:has(.pickdie) { gap: 6px; flex-wrap: nowrap; }
 .pickdie { border-width: 2px; padding: 1px; border-radius: 14px; }
 .pickdie .die { width: 50px; height: 50px; display: block; }
+
+/* ---------- menu groups ---------- */
+.menu-cat { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--amber); margin: 6px 0 -2px; }
+.bubble { display: inline-block; font: 800 0.8rem var(--font-display); letter-spacing: 0.04em; text-transform: uppercase; background: var(--ivory); color: var(--pip); border-radius: 10px 10px 10px 2px; padding: 5px 8px; }
+textarea.rule-text, input.rule-text {
+  width: 100%; font: 400 0.95rem var(--font-body); color: var(--fg); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-height: 40px; resize: vertical;
+}
+.rule-text:focus { outline: 2px solid var(--amber); outline-offset: 1px; }
+.rule-text[readonly] { color: var(--fg-2); }
+
+/* ---------- playing cards ---------- */
+.pcard {
+  display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;
+  width: 44px; height: 62px; border-radius: 7px; background: var(--ivory); color: var(--pip);
+  border: 1px solid #cbbfa9; line-height: 1; flex: none; vertical-align: middle;
+}
+.pcard b { font: 800 1.15rem var(--font-display); }
+.pcard i { font-style: normal; font-size: 1.15rem; }
+.pcard.red { color: var(--red); }
+.pcard.back { background: repeating-linear-gradient(45deg, #8f1f24 0 6px, #a8262c 6px 12px); border-color: #6d1519; }
+.pcard.mini { width: 24px; height: 34px; border-radius: 4px; }
+.pcard.mini b, .pcard.mini i { font-size: 0.75rem; }
+.pcard.big { width: 96px; height: 136px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.35); }
+.pcard.big b { font-size: 2.6rem; }
+.pcard.big i { font-size: 2.4rem; }
+.suit.red { color: var(--red); }
+.glyph .pcard.mini:nth-child(2) { transform: translateY(4px) rotate(8deg); margin-left: -6px; }
+
+/* ---------- Hesteløb ---------- */
+.race { display: flex; flex-direction: column; gap: 4px; background: #0f0b08; border: 1px solid var(--line); border-radius: var(--radius); padding: 8px; overflow-x: auto; }
+.lane { display: grid; grid-template-columns: repeat(var(--cols), minmax(26px, 1fr)); gap: 3px; }
+.cell { height: 38px; border-radius: 5px; background: var(--surface); display: grid; place-items: center; }
+.cell.start { background: transparent; border: 1px dashed var(--line); }
+.cell.goal { background: color-mix(in srgb, var(--amber) 18%, var(--surface)); }
+.lane.side .cell { background: transparent; }
+.pcard.horse { width: 26px; height: 36px; border-radius: 4px; }
+.pcard.horse b, .pcard.horse i { font-size: 0.8rem; }
+.suits { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.suitbtn { appearance: none; background: none; border: 2px solid transparent; border-radius: 10px; padding: 4px; cursor: pointer; display: grid; place-items: center; }
+.suitbtn.on { border-color: var(--amber); background: color-mix(in srgb, var(--amber) 14%, transparent); }
+.center-row { justify-content: center; gap: 8px; }
+.drawn { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; color: var(--fg-2); padding: 6px 0; }
+.big-btn { min-height: 60px; font-size: 1.15rem; }
+.center { text-align: center; }
+
+/* ---------- Kongens kop ---------- */
+.kk-status { display: flex; justify-content: space-between; align-items: center; }
+.kings { display: flex; gap: 4px; font-size: 1.6rem; }
+.king { color: var(--line); }
+.king.on { color: var(--amber); }
+.rule-title { font: 900 2.2rem/1 var(--font-display); color: var(--fg); text-transform: uppercase; letter-spacing: 0.02em; }
+.kk-text { max-width: 32ch; }
+.drawn .kk-text { color: var(--fg-2); font-size: 1.05rem; }
+
+/* ---------- party ---------- */
+.prompt { text-align: center; }
+.prompt-text { font: 800 2rem/1.1 var(--font-display); text-wrap: balance; }
+.vote-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.vote { appearance: none; min-height: 54px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); font: 700 1rem var(--font-body); cursor: pointer; padding: 6px; overflow-wrap: anywhere; }
+.vote.on { background: var(--amber); color: var(--amber-ink); border-color: var(--amber); }
+.tally { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.tally-row { display: grid; grid-template-columns: 7rem minmax(0, 1fr) 2ch; gap: 10px; align-items: center; }
+.tally-row .pname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tally-row .bar { height: 14px; width: var(--w); border-radius: 0 6px 6px 0; background: var(--fg-2); }
+.tally-row.top .bar { background: var(--red); }
+.btn.chosen { outline: 3px solid var(--amber); outline-offset: 2px; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.names { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-weight: 700; }

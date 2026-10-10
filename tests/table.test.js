@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { newTable, applyTable, viewTable } from '../js/table.js';
+import { newTable, applyTable, viewTable, GAMES } from '../js/table.js';
 
 const seeded = (seed = 1) => () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
 
@@ -53,4 +53,14 @@ test('removing a player from a two-player game returns to the lobby', () => {
   t = applyTable(t, 'h', { type: 'remove', id: 'p' });
   assert.equal(t.phase, 'lobby');
   assert.equal(t.players.length, 1);
+});
+
+test('every game on the menu starts with three players and has a view', () => {
+  for (const g of GAMES) {
+    let t = applyTable(table(), 'q', { type: 'join', name: 'Q' });
+    t = applyTable(t, 'h', { type: 'pick', gameId: g.id });
+    t = applyTable(t, 'h', { type: 'start' }, seeded(6));
+    assert.equal(t.phase, 'playing', g.id);
+    assert.doesNotThrow(() => JSON.stringify(viewTable(t, 'q')), g.id);
+  }
 });

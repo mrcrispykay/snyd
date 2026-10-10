@@ -1,13 +1,28 @@
 // Bodega: screens and wiring. One phone hosts the table (runs the engines), the others join.
-import { newTable, applyTable, viewTable, GAMES, gameById } from './table.js';
+import { newTable, applyTable, viewTable, GAMES, CATEGORIES, gameById } from './table.js';
 import { hostRoom, joinRoom } from './net.js';
-import { esc, die, vibrate } from './ui/common.js';
+import { esc, die, card, vibrate } from './ui/common.js';
 import * as snydUi from './ui/snyd.js';
 import * as meyerUi from './ui/meyer.js';
 import * as tiotusindUi from './ui/tiotusind.js';
+import * as hestelobUi from './ui/hestelob.js';
+import * as kongensKopUi from './ui/kongens-kop.js';
+import * as mestUi from './ui/mest-sandsynligt.js';
+import * as aldrigUi from './ui/jeg-har-aldrig.js';
 
-const UIS = { snyd: snydUi, meyer: meyerUi, 10000: tiotusindUi };
-const GLYPH = { snyd: [1, 4, 4], meyer: [2, 1], 10000: [1, 5, 5] };
+const UIS = {
+  snyd: snydUi, meyer: meyerUi, 10000: tiotusindUi, hestelob: hestelobUi, 'kongens-kop': kongensKopUi,
+  'mest-sandsynligt': mestUi, 'jeg-har-aldrig': aldrigUi,
+};
+const GLYPH = {
+  snyd: () => [1, 4, 4].map((d) => die(d)).join(''),
+  meyer: () => [2, 1].map((d) => die(d)).join(''),
+  10000: () => [1, 5, 5].map((d) => die(d)).join(''),
+  hestelob: () => card({ r: 1, s: 'H' }, 'mini') + card({ r: 1, s: 'S' }, 'mini'),
+  'kongens-kop': () => card({ r: 13, s: 'D' }, 'mini') + card({ r: 13, s: 'C' }, 'mini'),
+  'mest-sandsynligt': () => '<span class="bubble">who?</span>',
+  'jeg-har-aldrig': () => '<span class="bubble">never</span>',
+};
 
 const app = document.getElementById('app');
 
@@ -81,6 +96,8 @@ function receive(view) {
 // ---------- hosting / joining ----------
 async function startHosting(name, code = null, saved = null) {
   store.set('snyd.name', name);
+  // Resuming a saved table: take back the host's seat even if this tab's id was lost.
+  if (saved && saved.hostId !== myId) { myId = saved.hostId; store.set('snyd.id', myId, 'session'); }
   let attempt = 0;
   for (;;) {
     const c = code || newCode();
@@ -157,8 +174,11 @@ function render() {
 const toastHtml = () => (ui.toast ? `<div class="toast" role="status">${esc(ui.toast)}</div>` : '');
 
 function glyph(gameId) {
-  return `<span class="glyph">${(GLYPH[gameId] || [1]).map((d) => die(d)).join('')}</span>`;
+  return `<span class="glyph">${GLYPH[gameId] ? GLYPH[gameId]() : ''}</span>`;
 }
+
+/** Games grouped by category, in menu order. */
+const grouped = () => CATEGORIES.map(([cat, label]) => [label, GAMES.filter((g) => g.category === cat)]).filter(([, gs]) => gs.length);
 
 function renderHome() {
   const params = new URLSearchParams(location.search);
@@ -190,7 +210,7 @@ function renderHome() {
       </form>
       <div class="card">
         <p class="eyebrow">On the menu</p>
-        <ul class="menu-list">${GAMES.map((g) => `<li>${glyph(g.id)}<span><b>${g.name}</b><small>${g.tagline}</small></span></li>`).join('')}</ul>
+        ${grouped().map(([label, gs]) => `<p class="menu-cat">${label}</p><ul class="menu-list">${gs.map((g) => `<li>${glyph(g.id)}<span><b>${g.name}</b><small>${g.tagline}</small></span></li>`).join('')}</ul>`).join('')}
       </div>
       ${toastHtml()}
     </section>`;
@@ -223,6 +243,7 @@ function ctxFor(v) {
   const isHost = v.hostId === myId;
   return {
     me: myId,
+    isHost,
     ui: ui.games[v.gameId],
     covered: ui.covered,
     name: (id) => esc(names[id] ?? 'Someone who left'),
@@ -237,6 +258,8 @@ function ctxFor(v) {
 }
 
 function renderTable() {
+  // Keep typing intact when an update arrives while a text field is focused.
+  const focused = document.activeElement?.id?.startsWith('rule-') ? { id: document.activeElement.id, value: document.activeElement.value, pos: document.activeElement.selectionStart } : null;
   const v = session.view;
   let body = '';
   if (!v) body = `<div class="card center"><p>${esc(session.status)}</p><p class="muted">Table ${esc(session.code)}</p></div>`;
@@ -250,6 +273,10 @@ function renderTable() {
   }
   app.innerHTML = `<section class="tablepage">${statusBar(v)}${body}${toastHtml()}</section>`;
   wire();
+  if (focused) {
+    const el = document.getElementById(focused.id);
+    if (el) { el.value = focused.value; el.focus(); try { el.setSelectionRange(focused.pos, focused.pos); } catch { /* ignore */ } }
+  }
   const qr = app.querySelector('#qr');
   if (qr) drawQr(qr, joinUrl(session.code));
 }
@@ -260,6 +287,12 @@ function ruleControls(v, isHost) {
   return Object.entries(G.ruleInfo).map(([k, info]) => {
     const val = r[k];
     let ctrl;
+    if (info.text) {
+      ctrl = info.multiline
+        ? `<textarea class="rule-text" id="rule-${k}" data-rule-text="${k}" rows="4" ${isHost ? '' : 'readonly'}>${esc(val)}</textarea>`
+        : `<input class="rule-text" id="rule-${k}" data-rule-text="${k}" value="${esc(val)}" ${isHost ? '' : 'readonly'}>`;
+      return `<div class="rule rule-stack"><div><b>${info.label}</b>${info.help ? `<small>${info.help}</small>` : ''}</div>${ctrl}</div>`;
+    }
     if (typeof G.defaults[k] === 'boolean') {
       ctrl = `<button class="switch" role="switch" aria-checked="${val}" aria-label="${esc(info.label)}" data-rule="${k}" data-value="${!val}" ${isHost ? '' : 'disabled'}><span></span></button>`;
     } else {
@@ -298,10 +331,10 @@ function lobby(v) {
     <div class="card">
       <p class="eyebrow">${isHost ? 'Pick a game' : 'The host is picking a game'}</p>
       <div class="games" role="radiogroup" aria-label="Game">
-        ${GAMES.map((g) => `
+        ${grouped().map(([label, gs]) => `<p class="menu-cat">${label}</p>` + gs.map((g) => `
           <button class="game ${g.id === v.gameId ? 'on' : ''}" role="radio" aria-checked="${g.id === v.gameId}" data-act="pick" data-id="${g.id}" ${isHost ? '' : 'disabled'}>
             ${glyph(g.id)}<span><b>${g.name}</b><small>${g.tagline}</small></span><span class="players-range">${g.minPlayers === g.maxPlayers ? g.minPlayers : `${g.minPlayers}–${g.maxPlayers}`}</span>
-          </button>`).join('')}
+          </button>`).join('')).join('')}
       </div>
       ${isHost
         ? `<button class="btn btn-primary btn-block" data-act="start" ${tooFew ? 'disabled' : ''}>${tooFew ? `${G.name} needs ${G.minPlayers}+ players` : `Start ${G.name}`}</button>`
@@ -351,6 +384,9 @@ function wire() {
     const action = UIS[v.gameId].handle(el, v.game, ctxFor(v));
     if (action) act({ type: 'play', action });
     else render();
+  }));
+  app.querySelectorAll('[data-rule-text]').forEach((el) => el.addEventListener('change', () => {
+    act({ type: 'rules', rules: { [el.dataset.ruleText]: el.value } });
   }));
   app.querySelectorAll('[data-rule]').forEach((el) => el.addEventListener('click', (e) => {
     e.preventDefault();
