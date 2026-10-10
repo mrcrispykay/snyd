@@ -1,0 +1,11 @@
+{
+  "name": "snyd",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Snyd, the Danish bluffing dice game, played on everyone's phone.",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "serve": "node scripts/serve.mjs"
+  }
+}
