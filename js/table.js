@@ -13,16 +13,18 @@ import * as yatzy from './games/yatzy.js';
 import * as bussen from './games/bussen.js';
 import * as snydKort from './games/snyd-kort.js';
 import * as sjavs from './games/sjavs.js';
+import { BOTS, BOT_NAMES } from './bots/index.js';
 
 export const GAMES = [snyd, meyer, tiotusind, yatzy, skib, gris, hestelob, kongensKop, bussen, snydKort, sjavs, mestSandsynligt, jegHarAldrig];
 export const CATEGORIES = [['dice', 'Dice'], ['cards', 'Cards'], ['party', 'Party']];
 export const gameById = Object.fromEntries(GAMES.map((g) => [g.id, g]));
+export const hasBots = (gameId) => !!BOTS[gameId];
 
 export function newTable({ code, hostId }) {
   return {
     code,
     hostId,
-    players: [], // { id, name, connected }
+    players: [], // { id, name, connected, bot? }
     gameId: GAMES[0].id,
     rules: Object.fromEntries(GAMES.map((g) => [g.id, { ...g.defaults }])),
     phase: 'lobby', // lobby | playing
@@ -46,7 +48,7 @@ export function applyTable(prev, pid, action, rand = Math.random) {
       const name = String(action.name || '').trim().slice(0, 20) || 'Player';
       if (me) { me.name = name; me.connected = true; break; }
       // Someone rejoining from a new tab takes back their seat by name.
-      const seat = t.players.find((p) => !p.connected && p.name.toLowerCase() === name.toLowerCase());
+      const seat = t.players.find((p) => !p.bot && !p.connected && p.name.toLowerCase() === name.toLowerCase());
       if (seat) {
         const old = seat.id;
         seat.id = pid; seat.connected = true;
@@ -61,7 +63,17 @@ export function applyTable(prev, pid, action, rand = Math.random) {
       break;
     }
     case 'connected': {
-      if (me) me.connected = !!action.value;
+      if (me && !me.bot) me.connected = !!action.value;
+      break;
+    }
+    case 'addBot': {
+      if (!isHost) fail('Only the host can add computer players.');
+      if (t.phase !== 'lobby') fail('Add computer players between games.');
+      if (t.players.length >= 12) fail('The table is full.');
+      const used = new Set(t.players.map((p) => p.name));
+      const free = BOT_NAMES.filter((n) => !used.has(`${n} (bot)`));
+      const base = free.length ? free[Math.floor(rand() * free.length)] : `Bot ${t.players.length + 1}`;
+      t.players.push({ id: `bot-${Math.floor(rand() * 1e9).toString(36)}`, name: `${base} (bot)`, connected: true, bot: true });
       break;
     }
     case 'pick': {
@@ -90,7 +102,8 @@ export function applyTable(prev, pid, action, rand = Math.random) {
     }
     case 'start': {
       if (!isHost) fail('Only the host can start.');
-      const ids = t.players.map((p) => p.id);
+      // Computer players only sit in games that have a bot for them.
+      const ids = t.players.filter((p) => !p.bot || hasBots(t.gameId)).map((p) => p.id);
       if (ids.length < G.minPlayers) fail(`${G.name} needs at least ${G.minPlayers} players.`);
       if (ids.length > G.maxPlayers) fail(`${G.name} takes at most ${G.maxPlayers} players.`);
       t.seated = ids;
@@ -134,6 +147,25 @@ function renameInGame(game, from, to) {
 
 /** House rules for every game, with defaults filled in for games or settings added since the table was saved. */
 export const allRules = (t) => Object.fromEntries(GAMES.map((g) => [g.id, { ...g.defaults, ...(t.rules?.[g.id] || {}) }]));
+
+/**
+ * The next move a computer player wants to make, as { id, action } for applyTable, or null.
+ * Each bot decides from its own seat's view of the game, so it can't see hidden cards or dice.
+ */
+export function botMove(t, rand = Math.random) {
+  if (t.phase !== 'playing' || !t.game) return null;
+  const bot = BOTS[t.gameId];
+  if (!bot) return null;
+  const G = gameById[t.gameId];
+  for (const p of t.players) {
+    if (!p.bot || !t.seated.includes(p.id)) continue;
+    const v = G.view(t.game, p.id);
+    if (v.phase === 'over') return null;
+    const action = bot(v, p.id, rand);
+    if (action) return { id: p.id, action: { type: 'play', action } };
+  }
+  return null;
+}
 
 export function viewTable(t, pid) {
   return { ...t, rules: allRules(t), you: pid, game: t.game ? gameById[t.gameId].view(t.game, pid) : null };

@@ -30,6 +30,21 @@ The host's phone runs the games. The phones connect directly to each other over 
 
 **Keep the host's phone on the game screen.** If the host locks the phone or switches apps for long, the others lose the table until the host comes back. Players who drop out or reload rejoin their seat automatically, and rejoining with the same name and code also works. Anyone who arrives mid-game watches and gets dealt into the next one.
 
+## Computer players
+
+In the lobby, the host can tap **Add computer player**. Bots sit at the table like anyone else, so you can fill the fourth seat in Sjavs or play on your own. They play every dice and card game. They sit out the two party games, because a random vote adds nothing.
+
+Bots run on the host's phone and take a second or two per move. Each bot decides only from what its own seat can see, so it never peeks at your dice or cards.
+
+- **Snyd:** estimates how likely a bid is from its own dice and the odds for the hidden ones. It calls snyd when a bid looks unlikely, and bluffs now and then.
+- **Meyer:** lifts when a claim is unlikely to be true, is mostly honest, exaggerates sometimes, and lies as little as it can get away with.
+- **10.000, Gris, Skib, Yatzy:** sensible push-your-luck and scoring rules of thumb.
+- **Sjavs:** bids its longest trump suit, wins tricks cheaply, gives points to a partner who's winning, and otherwise plays low.
+- **Snyd med kort:** plays real cards when it has them, and calls when a claim is impossible or someone is about to go out.
+- **Hesteløb, Kongens kop, Bussen:** bets, draws and guesses.
+
+The bot logic is in `js/bots/`. The tests play complete games with bots in every game to check they never make an illegal move.
+
 ## Notes on rules
 
 Sjavs follows the Faroese rules on pagat.com. Partners sit opposite each other in the order people joined the table. Sources disagree on a few scoring details, so check the in-game rules against how you play.

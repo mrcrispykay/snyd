@@ -432,3 +432,6 @@ textarea.rule-text, input.rule-text {
 .center-info { grid-area: mid; display: grid; place-items: center; text-align: center; font: 800 1rem var(--font-display); color: var(--fg); }
 .pickcard.legal .pcard { box-shadow: 0 0 0 2px color-mix(in srgb, var(--amber) 55%, transparent); }
 .pickcard:disabled .pcard { opacity: 0.55; }
+
+/* ---------- computer players ---------- */
+.pill-bot { color: var(--amber); border-color: color-mix(in srgb, var(--amber) 45%, var(--line)); }

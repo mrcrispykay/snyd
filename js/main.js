@@ -1,5 +1,5 @@
 // Bodega: screens and wiring. One phone hosts the table (runs the engines), the others join.
-import { newTable, applyTable, viewTable, GAMES, CATEGORIES, gameById } from './table.js';
+import { newTable, applyTable, viewTable, botMove, hasBots, GAMES, CATEGORIES, gameById } from './table.js';
 import { hostRoom, joinRoom } from './net.js';
 import { esc, die, card, vibrate } from './ui/common.js';
 import * as snydUi from './ui/snyd.js';
@@ -86,6 +86,7 @@ function hostDispatch(pid, action) {
     table = applyTable(table, pid, action);
   } catch (e) {
     if (pid === myId) toast(e.message);
+    else if (pid.startsWith('bot-')) { console.warn('Computer player move refused:', e.message, action); botStuckAt = table.version; }
     else session.net?.send(pid, { t: 'error', msg: e.message });
     return;
   }
@@ -94,8 +95,27 @@ function hostDispatch(pid, action) {
 }
 
 function broadcast() {
-  for (const p of table.players) if (p.id !== myId) session.net?.send(p.id, { t: 'state', view: viewTable(table, p.id) });
+  for (const p of table.players) if (p.id !== myId && !p.bot) session.net?.send(p.id, { t: 'state', view: viewTable(table, p.id) });
   receive(viewTable(table, myId));
+  scheduleBots();
+}
+
+// Computer players run on the host. After every change, the next bot move (if any) is played
+// after a short, human-looking pause. A refused move parks the bots until the state changes.
+let botTimer = null;
+let botStuckAt = -1;
+function scheduleBots() {
+  if (session?.role !== 'host' || !table || botTimer || botStuckAt === table.version) return;
+  const next = botMove(table);
+  if (!next) return;
+  // Small steps (holding a die, peeking under the cup) go quicker than real decisions.
+  const quick = ['hold', 'look'].includes(next.action.action?.type);
+  botTimer = setTimeout(() => {
+    botTimer = null;
+    if (session?.role !== 'host' || !table) return;
+    const m = botMove(table);
+    if (m) hostDispatch(m.id, m.action);
+  }, quick ? 300 + Math.random() * 250 : 800 + Math.random() * 900);
 }
 
 function receive(view) {
@@ -322,7 +342,9 @@ function lobby(v) {
   const G = gameById[v.gameId];
   const U = UIS[v.gameId];
   const r = v.rules[v.gameId];
-  const n = v.players.length;
+  const botsPlay = hasBots(v.gameId);
+  const n = v.players.filter((p) => botsPlay || !p.bot).length;
+  const hasBotSeats = v.players.some((p) => p.bot);
   const tooFew = n < G.minPlayers;
   return `
     <div class="card invite">
@@ -335,11 +357,13 @@ function lobby(v) {
       <div id="qr" class="qr" aria-label="QR code with the join link"></div>
     </div>
     <div class="card">
-      <p class="eyebrow">At the table · ${n}</p>
+      <p class="eyebrow">At the table · ${v.players.length}</p>
       <ul class="lobby-players">
-        ${v.players.map((p) => `<li><span class="dot ${p.connected ? 'on' : ''}"></span>${esc(p.name)}${p.id === v.hostId ? ' <span class="pill">host</span>' : ''}${p.id === myId ? ' <span class="pill">you</span>' : ''}
+        ${v.players.map((p) => `<li><span class="dot ${p.connected ? 'on' : ''}"></span>${esc(p.name)}${p.id === v.hostId ? ' <span class="pill">host</span>' : ''}${p.id === myId ? ' <span class="pill">you</span>' : ''}${p.bot ? ' <span class="pill pill-bot">computer</span>' : ''}
           ${isHost && p.id !== myId ? `<button class="btn btn-quiet btn-small" data-act="remove" data-id="${p.id}">Remove</button>` : ''}</li>`).join('')}
       </ul>
+      ${isHost ? '<button class="btn btn-small" data-act="addBot">+ Add computer player</button>' : ''}
+      ${hasBotSeats && !botsPlay ? `<p class="muted">Computer players sit out ${G.name}.</p>` : ''}
     </div>
     <div class="card">
       <p class="eyebrow">${isHost ? 'Pick a game' : 'The host is picking a game'}</p>
@@ -386,6 +410,7 @@ function wire() {
       case 'start': act({ type: 'start' }); return;
       case 'lobby': act({ type: 'lobby' }); return;
       case 'remove': act({ type: 'remove', id: el.dataset.id }); return;
+      case 'addBot': act({ type: 'addBot' }); return;
       case 'cover': ui.covered = !ui.covered; store.set('snyd.covered', ui.covered); render(); return;
       default:
     }
