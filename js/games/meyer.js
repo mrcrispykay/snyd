@@ -113,7 +113,7 @@ function loseLives(s, pid, n) {
 }
 
 export function apply(s, pid, action, rand = Math.random) {
-  const fail = (msg) => { throw new Error(msg); };
+  const fail = (msg, params) => { throw Object.assign(new Error(msg), { params }); };
   const myTurn = s.phase === 'turn' && s.turn === pid;
   switch (action.type) {
     case 'roll': {
@@ -131,7 +131,7 @@ export function apply(s, pid, action, rand = Math.random) {
       if (!myTurn || !s.cup) fail('Roll first.');
       const key = String(action.key);
       if (!ORDER.includes(key)) fail('Unknown roll.');
-      if (!allowedClaims(s).includes(key)) fail(`You have to announce ${s.rules.equalAllowed ? 'at least' : 'more than'} ${rollName(s.claim.key)}.`);
+      if (!allowedClaims(s).includes(key)) fail('Your announcement has to beat the last one.');
       s.claim = { key, by: pid, blind: false };
       s.claimDice = s.cup.dice;
       s.history.push({ ...s.claim });

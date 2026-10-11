@@ -1,6 +1,9 @@
 // Bodega: screens and wiring. One phone hosts the table (runs the engines), the others join.
 import { newTable, applyTable, viewTable, botMove, hasBots, GAMES, CATEGORIES, gameById } from './table.js';
 import { hostRoom, joinRoom } from './net.js';
+import {
+  t, num, LANGS, getLang, setLang, gameName, gameTagline, otherNames, rulesText, kongensKopDefault,
+} from './i18n/index.js';
 import { esc, die, card, vibrate } from './ui/common.js';
 import * as snydUi from './ui/snyd.js';
 import * as meyerUi from './ui/meyer.js';
@@ -33,11 +36,12 @@ const GLYPH = {
   bussen: () => card({ r: 7, s: 'H' }, 'mini') + card({ r: 7, s: 'S' }, 'mini'),
   'snyd-kort': () => card(null, 'mini') + card(null, 'mini'),
   sjavs: () => card({ r: 12, s: 'C' }, 'mini') + card({ r: 11, s: 'D' }, 'mini'),
-  'mest-sandsynligt': () => '<span class="bubble">who?</span>',
-  'jeg-har-aldrig': () => '<span class="bubble">never</span>',
+  'mest-sandsynligt': () => `<span class="bubble">${t('who?')}</span>`,
+  'jeg-har-aldrig': () => `<span class="bubble">${t('never')}</span>`,
 };
 
 const app = document.getElementById('app');
+document.documentElement.lang = getLang();
 
 // ---------- storage (always optional) ----------
 const store = {
@@ -58,10 +62,11 @@ const joinUrl = (code) => `${location.origin}${location.pathname}?r=${code}`;
 // ---------- session ----------
 let session = null; // { role, code, view, status, ok, net }
 let table = null; // host only: the full table state
-const ui = { covered: store.get('snyd.covered', false), leaveArmed: false, toast: '', toastTimer: null, games: {}, howOpen: false };
+const ui = { covered: store.get('snyd.covered', false), leaveArmed: false, toast: '', toastTimer: null, games: {}, sheet: null };
 
-function toast(msg) {
-  ui.toast = msg;
+/** Shows a message. `msg` is an English key; params fill its {placeholders}. */
+function toast(msg, params) {
+  ui.toast = t(msg, params);
   clearTimeout(ui.toastTimer);
   ui.toastTimer = setTimeout(() => { ui.toast = ''; render(); }, 3500);
   render();
@@ -85,9 +90,9 @@ function hostDispatch(pid, action) {
   try {
     table = applyTable(table, pid, action);
   } catch (e) {
-    if (pid === myId) toast(e.message);
+    if (pid === myId) toast(e.message, e.params);
     else if (pid.startsWith('bot-')) { console.warn('Computer player move refused:', e.message, action); botStuckAt = table.version; }
-    else session.net?.send(pid, { t: 'error', msg: e.message });
+    else session.net?.send(pid, { t: 'error', msg: e.message, params: e.params });
     return;
   }
   store.set(`snyd.table.${table.code}`, table);
@@ -172,7 +177,7 @@ function startJoining(name, code) {
     onStatus: setStatus,
     onMessage: (msg) => {
       if (msg.t === 'state') receive(msg.view);
-      if (msg.t === 'error') toast(msg.msg);
+      if (msg.t === 'error') toast(msg.msg, msg.params);
     },
   });
   keepAwake();
@@ -197,21 +202,58 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 window.addEventListener('beforeunload', (e) => {
   if (session?.role === 'host' && table && table.players.length > 1) { e.preventDefault(); e.returnValue = ''; }
 });
+window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && ui.sheet) { ui.sheet = null; render(); } });
 
 // ---------- screens ----------
 function render() {
   if (!session) renderHome();
   else renderTable();
+  if (ui.sheet) {
+    app.insertAdjacentHTML('beforeend', rulesSheet(ui.sheet.gameId, ui.sheet.rules));
+    wireSheet();
+  }
 }
 
 const toastHtml = () => (ui.toast ? `<div class="toast" role="status">${esc(ui.toast)}</div>` : '');
-
-function glyph(gameId) {
-  return `<span class="glyph">${GLYPH[gameId] ? GLYPH[gameId]() : ''}</span>`;
-}
+const glyph = (gameId) => `<span class="glyph">${GLYPH[gameId] ? GLYPH[gameId]() : ''}</span>`;
+const players = (g) => (g.minPlayers === g.maxPlayers ? t('{n} players', { n: g.minPlayers }) : t('{a}–{b} players', { a: g.minPlayers, b: g.maxPlayers }));
 
 /** Games grouped by category, in menu order. */
-const grouped = () => CATEGORIES.map(([cat, label]) => [label, GAMES.filter((g) => g.category === cat)]).filter(([, gs]) => gs.length);
+const grouped = () => CATEGORIES.map(([cat, label]) => [t(label), GAMES.filter((g) => g.category === cat)]).filter(([, gs]) => gs.length);
+
+function langPicker() {
+  return `<label class="lang"><span class="sr-only">${t('Language')}</span><select id="lang" aria-label="${t('Language')}">${LANGS.map((l) => `<option value="${l.code}" ${l.code === getLang() ? 'selected' : ''}>${l.label}</option>`).join('')}</select></label>`;
+}
+
+/** The rules sheet: goal, how it goes, how it ends, and the house rules in play. */
+function rulesSheet(gameId, rules) {
+  const G = gameById[gameId];
+  const r = { ...G.defaults, ...rules };
+  const helpers = { die: (v) => die(v, 'die-inline'), card: (c) => card(c, 'mini'), n: num };
+  const txt = rulesText(gameId, r, helpers);
+  const aka = otherNames(gameId);
+  return `
+    <div class="sheet-backdrop" data-sheet="close"></div>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+      <header class="sheet-head">
+        <span class="glyph">${GLYPH[gameId] ? GLYPH[gameId]() : ''}</span>
+        <div><h2 id="sheet-title">${gameName(gameId)}</h2>${aka.length ? `<p class="aka">${t('Also called')} ${aka.map((a) => `<b>${esc(a.name)}</b> <small>(${a.lang})</small>`).join(', ')}</p>` : ''}</div>
+        <button class="btn btn-quiet btn-small sheet-close" data-sheet="close" aria-label="${t('Close')}">✕</button>
+      </header>
+      <p class="sheet-meta">${players(G)} · ${UIS[gameId].rulesSummary(r)}</p>
+      ${txt ? `
+        <h3>${t('Goal')}</h3><p>${txt.goal}</p>
+        <h3>${t('How it goes')}</h3><ol>${txt.steps.filter(Boolean).map((s) => `<li>${s}</li>`).join('')}</ol>
+        <h3>${t('The end')}</h3><p>${txt.end}</p>` : ''}
+      <button class="btn btn-primary btn-block" data-sheet="close">${t('Got it')}</button>
+    </div>`;
+}
+
+function wireSheet() {
+  app.querySelectorAll('[data-sheet="close"]').forEach((el) => el.addEventListener('click', (e) => { e.preventDefault(); ui.sheet = null; render(); }));
+}
+
+const openRules = (gameId, rules) => { ui.sheet = { gameId, rules: rules || {} }; render(); };
 
 function renderHome() {
   const params = new URLSearchParams(location.search);
@@ -220,30 +262,30 @@ function renderHome() {
   app.innerHTML = `
     <section class="home">
       <header class="brand">
-        <div class="brand-dice">${die(1)}${die(6)}${die(3)}</div>
+        <div class="brand-row"><div class="brand-dice">${die(1)}${die(6)}${die(3)}</div>${langPicker()}</div>
         <h1>Bodega</h1>
-        <p class="tag">Danish bar games for the whole table. Everyone plays on their own phone.</p>
+        <p class="tag">${t('Danish bar games for the whole table. Everyone plays on their own phone.')}</p>
       </header>
       <form id="home-form" class="card form" autocomplete="off">
-        <label for="name">Your name</label>
-        <input id="name" name="name" maxlength="20" placeholder="e.g. Kasper" value="${esc(name)}" required>
+        <label for="name">${t('Your name')}</label>
+        <input id="name" name="name" maxlength="20" placeholder="${t('e.g. Kasper')}" value="${esc(name)}" required>
         ${code ? `
-          <p class="joining">Joining table <b class="code">${esc(code)}</b></p>
-          <button class="btn btn-primary" data-do="join">Join table</button>
-          <button class="btn btn-quiet" type="button" data-do="host">Start a new table instead</button>
+          <p class="joining">${t('Joining table')} <b class="code">${esc(code)}</b></p>
+          <button class="btn btn-primary" data-do="join">${t('Join table')}</button>
+          <button class="btn btn-quiet" type="button" data-do="host">${t('Start a new table instead')}</button>
         ` : `
-          <button class="btn btn-primary" data-do="host">Start a table</button>
-          <div class="or"><span>or join one</span></div>
-          <label for="code">Table code</label>
+          <button class="btn btn-primary" data-do="host">${t('Start a table')}</button>
+          <div class="or"><span>${t('or join one')}</span></div>
+          <label for="code">${t('Table code')}</label>
           <div class="row">
             <input id="code" name="code" maxlength="4" placeholder="ABCD" autocapitalize="characters" inputmode="text" class="code-input">
-            <button class="btn" data-do="join">Join</button>
+            <button class="btn" data-do="join">${t('Join')}</button>
           </div>
         `}
       </form>
       <div class="card">
-        <p class="eyebrow">On the menu</p>
-        ${grouped().map(([label, gs]) => `<p class="menu-cat">${label}</p><ul class="menu-list">${gs.map((g) => `<li>${glyph(g.id)}<span><b>${g.name}</b><small>${g.tagline}</small></span></li>`).join('')}</ul>`).join('')}
+        <p class="eyebrow">${t('On the menu')} · <span class="muted">${t('tap a game for its rules')}</span></p>
+        ${grouped().map(([label, gs]) => `<p class="menu-cat">${label}</p><ul class="menu-list">${gs.map((g) => `<li><button class="menu-item" data-rules="${g.id}">${glyph(g.id)}<span><b>${gameName(g.id)}</b><small>${gameTagline(g.id)}</small></span><span class="info">?</span></button></li>`).join('')}</ul>`).join('')}
       </div>
       ${toastHtml()}
     </section>`;
@@ -256,17 +298,26 @@ function renderHome() {
     if (b.dataset.do === 'host') startHosting(n);
     else startJoining(n, code || form.querySelector('#code').value);
   }));
+  app.querySelectorAll('[data-rules]').forEach((b) => b.addEventListener('click', () => openRules(b.dataset.rules)));
+  wireLang();
+}
+
+function wireLang() {
+  const sel = app.querySelector('#lang');
+  if (sel) sel.addEventListener('change', () => { setLang(sel.value); render(); });
 }
 
 function statusBar(v) {
-  const g = v && v.phase === 'playing' ? gameById[v.gameId] : null;
+  const playing = v && v.phase === 'playing';
   return `
     <header class="topbar">
-      <span class="code-chip" aria-label="Table code">${esc(session.code)}</span>
-      <span class="status ${session.ok ? 'ok' : 'bad'}"><i></i>${esc(session.status || '')}</span>
-      ${g ? `<span class="round">${g.name}</span>` : ''}
-      <button class="btn btn-quiet btn-small" data-act="leave">${ui.leaveArmed ? 'Tap again to leave' : 'Leave'}</button>
-    </header>`;
+      <span class="code-chip" aria-label="${t('Table code')}">${esc(session.code)}</span>
+      <span class="status ${session.ok ? 'ok' : 'bad'}"><i></i>${esc(t(session.status || ''))}</span>
+      ${playing ? `<button class="btn btn-quiet btn-small" data-act="rules">${t('Rules')}</button>` : ''}
+      ${langPicker()}
+      <button class="btn btn-quiet btn-small" data-act="leave">${ui.leaveArmed ? t('Tap again to leave') : t('Leave')}</button>
+    </header>
+    ${playing ? `<p class="game-title">${gameName(v.gameId)}</p>` : ''}`;
 }
 
 function ctxFor(v) {
@@ -279,13 +330,13 @@ function ctxFor(v) {
     isHost,
     ui: ui.games[v.gameId],
     covered: ui.covered,
-    name: (id) => esc(names[id] ?? 'Someone who left'),
+    name: (id) => esc(names[id] ?? t('Someone who left')),
     connected: (id) => conn[id] !== false,
     gameOver: (line) => `
       <div class="card gameover">
-        <p class="eyebrow">Game over</p>
+        <p class="eyebrow">${t('Game over')}</p>
         <p class="final">${line}</p>
-        ${isHost ? '<div class="act-row"><button class="btn btn-primary" data-act="start">Play again</button><button class="btn" data-act="lobby">Back to the menu</button></div>' : '<p class="muted">The host picks what’s next.</p>'}
+        ${isHost ? `<div class="act-row"><button class="btn btn-primary" data-act="start">${t('Play again')}</button><button class="btn" data-act="lobby">${t('Back to the menu')}</button></div>` : `<p class="muted">${t('The host picks what’s next.')}</p>`}
       </div>`,
   };
 }
@@ -295,14 +346,14 @@ function renderTable() {
   const focused = document.activeElement?.id?.startsWith('rule-') ? { id: document.activeElement.id, value: document.activeElement.value, pos: document.activeElement.selectionStart } : null;
   const v = session.view;
   let body = '';
-  if (!v) body = `<div class="card center"><p>${esc(session.status)}</p><p class="muted">Table ${esc(session.code)}</p></div>`;
+  if (!v) body = `<div class="card center"><p>${esc(t(session.status))}</p><p class="muted">${t('Table')} ${esc(session.code)}</p></div>`;
   else if (v.phase === 'lobby') body = lobby(v);
   else {
     const U = UIS[v.gameId];
     const watching = !v.seated.includes(myId);
-    body = (watching ? '<div class="event">You’re watching this game. You’ll be dealt in next time.</div>' : '')
+    body = (watching ? `<div class="event">${t('You’re watching this game. You’ll be dealt in next time.')}</div>` : '')
       + U.render(v.game, ctxFor(v))
-      + (v.hostId === myId && v.game.phase !== 'over' ? '<details class="hostmenu"><summary>Host</summary><button class="btn btn-small" data-act="lobby">Stop the game and go back to the menu</button></details>' : '');
+      + (v.hostId === myId && v.game.phase !== 'over' ? `<details class="hostmenu"><summary>${t('Host')}</summary><button class="btn btn-small" data-act="lobby">${t('Stop the game and go back to the menu')}</button></details>` : '');
   }
   app.innerHTML = `<section class="tablepage">${statusBar(v)}${body}${toastHtml()}</section>`;
   wire();
@@ -314,26 +365,35 @@ function renderTable() {
   if (qr) drawQr(qr, joinUrl(session.code));
 }
 
+/** Text shown in a house-rule text field: untouched Kongens kop defaults show in this phone's language. */
+function ruleTextValue(gameId, k, val) {
+  if (gameId === 'kongens-kop' && val === gameById[gameId].defaults[k]) return kongensKopDefault(k);
+  return val;
+}
+
 function ruleControls(v, isHost) {
   const G = gameById[v.gameId];
   const r = v.rules[v.gameId];
   return Object.entries(G.ruleInfo).map(([k, info]) => {
     const val = r[k];
+    const label = t(info.label);
+    const help = info.help ? `<small>${t(info.help, info.helpParams)}</small>` : '';
     let ctrl;
     if (info.text) {
+      const shown = ruleTextValue(v.gameId, k, val);
       ctrl = info.multiline
-        ? `<textarea class="rule-text" id="rule-${k}" data-rule-text="${k}" rows="4" ${isHost ? '' : 'readonly'}>${esc(val)}</textarea>`
-        : `<input class="rule-text" id="rule-${k}" data-rule-text="${k}" value="${esc(val)}" ${isHost ? '' : 'readonly'}>`;
-      return `<div class="rule rule-stack"><div><b>${info.label}</b>${info.help ? `<small>${info.help}</small>` : ''}</div>${ctrl}</div>`;
+        ? `<textarea class="rule-text" id="rule-${k}" data-rule-text="${k}" rows="4" ${isHost ? '' : 'readonly'}>${esc(shown)}</textarea>`
+        : `<input class="rule-text" id="rule-${k}" data-rule-text="${k}" value="${esc(shown)}" ${isHost ? '' : 'readonly'}>`;
+      return `<div class="rule rule-stack"><div><b>${label}</b>${help}</div>${ctrl}</div>`;
     }
     if (typeof G.defaults[k] === 'boolean') {
-      ctrl = `<button class="switch" role="switch" aria-checked="${val}" aria-label="${esc(info.label)}" data-rule="${k}" data-value="${!val}" ${isHost ? '' : 'disabled'}><span></span></button>`;
+      ctrl = `<button class="switch" role="switch" aria-checked="${val}" aria-label="${esc(label)}" data-rule="${k}" data-value="${!val}" ${isHost ? '' : 'disabled'}><span></span></button>`;
     } else {
-      const opts = info.options.map((o) => (Array.isArray(o) ? o : [o, typeof o === 'number' && o >= 1000 ? o.toLocaleString('da-DK') : String(o)]));
+      const opts = info.options.map((o) => (Array.isArray(o) ? [o[0], t(o[1])] : [o, typeof o === 'number' && o >= 1000 ? num(o) : String(o)]));
       const wide = opts.some(([, l]) => l.length > 8);
       ctrl = `<div class="seg ${wide ? 'seg-wide' : ''}">${opts.map(([ov, ol]) => `<button data-rule="${k}" data-value="${ov}" aria-pressed="${String(val) === String(ov)}" ${isHost ? '' : 'disabled'}>${esc(ol)}</button>`).join('')}</div>`;
     }
-    return `<div class="rule ${typeof G.defaults[k] === 'boolean' ? '' : 'rule-stack'}"><div><b>${info.label}</b>${info.help ? `<small>${info.help}</small>` : ''}</div>${ctrl}</div>`;
+    return `<div class="rule ${typeof G.defaults[k] === 'boolean' ? '' : 'rule-stack'}"><div><b>${label}</b>${help}</div>${ctrl}</div>`;
   }).join('');
 }
 
@@ -346,53 +406,52 @@ function lobby(v) {
   const n = v.players.filter((p) => botsPlay || !p.bot).length;
   const hasBotSeats = v.players.some((p) => p.bot);
   const tooFew = n < G.minPlayers;
+  const gname = gameName(v.gameId);
   return `
     <div class="card invite">
       <div class="invite-text">
-        <p class="eyebrow">Table code</p>
+        <p class="eyebrow">${t('Table code')}</p>
         <p class="big-code">${esc(session.code)}</p>
-        <p class="muted">Friends scan the code, or open the site and type the table code.</p>
-        <div class="row"><button class="btn btn-small" data-act="share">Share link</button></div>
+        <p class="muted">${t('Friends scan the code, or open the site and type the table code.')}</p>
+        <div class="row"><button class="btn btn-small" data-act="share">${t('Share link')}</button></div>
       </div>
-      <div id="qr" class="qr" aria-label="QR code with the join link"></div>
+      <div id="qr" class="qr" aria-label="${t('QR code with the join link')}"></div>
     </div>
     <div class="card">
-      <p class="eyebrow">At the table · ${v.players.length}</p>
+      <p class="eyebrow">${t('At the table')} · ${v.players.length}</p>
       <ul class="lobby-players">
-        ${v.players.map((p) => `<li><span class="dot ${p.connected ? 'on' : ''}"></span>${esc(p.name)}${p.id === v.hostId ? ' <span class="pill">host</span>' : ''}${p.id === myId ? ' <span class="pill">you</span>' : ''}${p.bot ? ' <span class="pill pill-bot">computer</span>' : ''}
-          ${isHost && p.id !== myId ? `<button class="btn btn-quiet btn-small" data-act="remove" data-id="${p.id}">Remove</button>` : ''}</li>`).join('')}
+        ${v.players.map((p) => `<li><span class="dot ${p.connected ? 'on' : ''}"></span>${esc(p.name)}${p.id === v.hostId ? ` <span class="pill">${t('host')}</span>` : ''}${p.id === myId ? ` <span class="pill">${t('you')}</span>` : ''}${p.bot ? ` <span class="pill pill-bot">${t('computer')}</span>` : ''}
+          ${isHost && p.id !== myId ? `<button class="btn btn-quiet btn-small" data-act="remove" data-id="${p.id}">${t('Remove')}</button>` : ''}</li>`).join('')}
       </ul>
-      ${isHost ? '<button class="btn btn-small" data-act="addBot">+ Add computer player</button>' : ''}
-      ${hasBotSeats && !botsPlay ? `<p class="muted">Computer players sit out ${G.name}.</p>` : ''}
+      ${isHost ? `<button class="btn btn-small" data-act="addBot">+ ${t('Add computer player')}</button>` : ''}
+      ${hasBotSeats && !botsPlay ? `<p class="muted">${t('Computer players sit out {game}.', { gameId: v.gameId })}</p>` : ''}
     </div>
     <div class="card">
-      <p class="eyebrow">${isHost ? 'Pick a game' : 'The host is picking a game'}</p>
-      <div class="games" role="radiogroup" aria-label="Game">
+      <p class="eyebrow">${isHost ? t('Pick a game') : t('The host is picking a game')}</p>
+      <div class="games" role="radiogroup" aria-label="${t('Game')}">
         ${grouped().map(([label, gs]) => `<p class="menu-cat">${label}</p>` + gs.map((g) => `
           <button class="game ${g.id === v.gameId ? 'on' : ''}" role="radio" aria-checked="${g.id === v.gameId}" data-act="pick" data-id="${g.id}" ${isHost ? '' : 'disabled'}>
-            ${glyph(g.id)}<span><b>${g.name}</b><small>${g.tagline}</small></span><span class="players-range">${g.minPlayers === g.maxPlayers ? g.minPlayers : `${g.minPlayers}–${g.maxPlayers}`}</span>
+            ${glyph(g.id)}<span><b>${gameName(g.id)}</b><small>${gameTagline(g.id)}</small></span><span class="players-range">${players(g)}</span>
           </button>`).join('')).join('')}
       </div>
+      <button class="btn btn-block" data-act="rules">${t('How to play {game}', { gameId: v.gameId })}</button>
       ${isHost
-        ? `<button class="btn btn-primary btn-block" data-act="start" ${tooFew ? 'disabled' : ''}>${tooFew ? `${G.name} needs ${G.minPlayers}+ players` : `Start ${G.name}`}</button>`
-        : `<p class="muted">Next up: <b>${G.name}</b> · ${U.rulesSummary(r)}</p>`}
+        ? `<button class="btn btn-primary btn-block" data-act="start" ${tooFew ? 'disabled' : ''}>${tooFew ? t('{game} needs {n}+ players', { gameId: v.gameId, n: G.minPlayers }) : t('Start {game}', { gameId: v.gameId })}</button>`
+        : `<p class="muted">${t('Next up:')} <b>${gname}</b> · ${U.rulesSummary(r)}</p>`}
     </div>
     <div class="card">
-      <p class="eyebrow">House rules for ${G.name}${isHost ? '' : ' · set by the host'}</p>
+      <p class="eyebrow">${isHost ? t('House rules for {game}', { gameId: v.gameId }) : t('House rules for {game} · set by the host', { gameId: v.gameId })}</p>
       ${ruleControls(v, isHost)}
     </div>
-    <details class="howto" ${ui.howOpen ? 'open' : ''}>
-      <summary>How to play ${G.name}</summary>
-      <ol>${U.howTo(r)}</ol>
-    </details>`;
+    <div class="lang-row">${langPicker()}</div>`;
 }
 
 // ---------- events ----------
 function wire() {
-  const how = app.querySelector('details.howto');
-  if (how) how.addEventListener('toggle', () => { ui.howOpen = how.open; });
+  wireLang();
   app.querySelectorAll('[data-act]').forEach((el) => el.addEventListener('click', (e) => {
     e.preventDefault();
+    const v = session?.view;
     switch (el.dataset.act) {
       case 'leave':
         if (ui.leaveArmed) { ui.leaveArmed = false; leave(); return; }
@@ -402,10 +461,11 @@ function wire() {
         return;
       case 'share': {
         const url = joinUrl(session.code);
-        if (navigator.share) navigator.share({ title: 'Bodega', text: `Join my table: ${session.code}`, url }).catch(() => {});
-        else navigator.clipboard?.writeText(url).then(() => toast('Link copied.'), () => toast(url));
+        if (navigator.share) navigator.share({ title: 'Bodega', text: t('Join my table: {code}', { code: session.code }), url }).catch(() => {});
+        else navigator.clipboard?.writeText(url).then(() => toast('Link copied.'), () => { ui.toast = url; render(); });
         return;
       }
+      case 'rules': if (v) openRules(v.gameId, v.game?.rules || v.rules[v.gameId]); return;
       case 'pick': act({ type: 'pick', gameId: el.dataset.id }); return;
       case 'start': act({ type: 'start' }); return;
       case 'lobby': act({ type: 'lobby' }); return;
@@ -424,7 +484,12 @@ function wire() {
     else render();
   }));
   app.querySelectorAll('[data-rule-text]').forEach((el) => el.addEventListener('change', () => {
-    act({ type: 'rules', rules: { [el.dataset.ruleText]: el.value } });
+    const v = session.view;
+    const k = el.dataset.ruleText;
+    // Typing the translated default back in keeps the shared default (so each phone translates it).
+    const def = gameById[v.gameId].defaults[k];
+    const value = v.gameId === 'kongens-kop' && el.value === kongensKopDefault(k) ? def : el.value;
+    act({ type: 'rules', rules: { [k]: value } });
   }));
   app.querySelectorAll('[data-rule]').forEach((el) => el.addEventListener('click', (e) => {
     e.preventDefault();

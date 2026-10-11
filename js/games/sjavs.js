@@ -123,7 +123,7 @@ function newDeal(s, rand) {
 const seatOf = (s, pid) => s.seats.indexOf(pid);
 
 export function apply(s, pid, action, rand = Math.random) {
-  const fail = (msg) => { throw new Error(msg); };
+  const fail = (msg, params) => { throw Object.assign(new Error(msg), { params }); };
   const seat = seatOf(s, pid);
   if (seat < 0) fail('You’re not at this table.');
   switch (action.type) {

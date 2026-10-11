@@ -132,7 +132,7 @@ function takeKeep(s, keep) {
 }
 
 export function apply(s, pid, action, rand = Math.random) {
-  const fail = (msg) => { throw new Error(msg); };
+  const fail = (msg, params) => { throw Object.assign(new Error(msg), { params }); };
   if (s.phase !== 'turn') fail('The game is over.');
   if (s.turn !== pid) fail('It’s not your turn.');
   const me = s.players.find((p) => p.id === pid);
@@ -162,7 +162,7 @@ export function apply(s, pid, action, rand = Math.random) {
       if (!s.roll.length) fail('Roll first.');
       const k = takeKeep(s, action.keep);
       const total = s.turnPoints + k.pts;
-      if (me.score === 0 && total < s.rules.openingMin) fail(`You need ${s.rules.openingMin} in one turn to get on the board.`);
+      if (me.score === 0 && total < s.rules.openingMin) fail('You need {n} in one turn to get on the board.', { n: s.rules.openingMin });
       me.score += total;
       s.event = { type: 'bank', by: pid, points: total };
       if (s.finalRound) {

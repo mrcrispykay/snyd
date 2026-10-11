@@ -99,7 +99,7 @@ function boardBus(s, rand) {
 }
 
 export function apply(s, pid, action, rand = Math.random) {
-  const fail = (msg) => { throw new Error(msg); };
+  const fail = (msg, params) => { throw Object.assign(new Error(msg), { params }); };
   switch (action.type) {
     case 'answer': {
       if (s.phase !== 'questions') fail('The questions are over.');

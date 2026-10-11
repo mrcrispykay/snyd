@@ -40,7 +40,7 @@ export function applyTable(prev, pid, action, rand = Math.random) {
   t.rules = allRules(t);
   const me = t.players.find((p) => p.id === pid);
   const isHost = pid === t.hostId;
-  const fail = (msg) => { throw new Error(msg); };
+  const fail = (msg, params) => { throw Object.assign(new Error(msg), { params }); };
   const G = gameById[t.gameId];
 
   switch (action.type) {
@@ -104,8 +104,8 @@ export function applyTable(prev, pid, action, rand = Math.random) {
       if (!isHost) fail('Only the host can start.');
       // Computer players only sit in games that have a bot for them.
       const ids = t.players.filter((p) => !p.bot || hasBots(t.gameId)).map((p) => p.id);
-      if (ids.length < G.minPlayers) fail(`${G.name} needs at least ${G.minPlayers} players.`);
-      if (ids.length > G.maxPlayers) fail(`${G.name} takes at most ${G.maxPlayers} players.`);
+      if (ids.length < G.minPlayers) fail('{game} needs at least {n} players.', { gameId: G.id, n: G.minPlayers });
+      if (ids.length > G.maxPlayers) fail('{game} takes at most {n} players.', { gameId: G.id, n: G.maxPlayers });
       t.seated = ids;
       t.game = G.start(ids, t.rules[t.gameId], rand);
       t.phase = 'playing';

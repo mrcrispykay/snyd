@@ -57,13 +57,13 @@ function accept(s) {
 }
 
 export function apply(s, pid, action) {
-  const fail = (msg) => { throw new Error(msg); };
+  const fail = (msg, params) => { throw Object.assign(new Error(msg), { params }); };
   switch (action.type) {
     case 'play': {
       if (s.phase !== 'play') fail('Wait for the next turn.');
       if (s.turn !== pid) fail('It’s not your turn.');
       const idx = [...new Set((action.cards || []).map(Number))].filter((i) => i >= 0 && i < s.hands[pid].length);
-      if (!idx.length || idx.length > s.rules.maxCards) fail(`Play 1 to ${s.rules.maxCards} cards.`);
+      if (!idx.length || idx.length > s.rules.maxCards) fail('Play 1 to {n} cards.', { n: s.rules.maxCards });
       if (accept(s)) return s;
       const cards = idx.map((i) => s.hands[pid][i]);
       s.hands[pid] = s.hands[pid].filter((_, i) => !idx.includes(i));

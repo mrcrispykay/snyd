@@ -42,7 +42,7 @@ export function start(playerIds, rules, rand = Math.random) {
 const finish = (s) => s.rules.trackLength + 1;
 
 export function apply(s, pid, action, rand = Math.random, meta = {}) {
-  const fail = (msg) => { throw new Error(msg); };
+  const fail = (msg, params) => { throw Object.assign(new Error(msg), { params }); };
   switch (action.type) {
     case 'bet': {
       if (s.phase !== 'betting') fail('Bets are closed.');

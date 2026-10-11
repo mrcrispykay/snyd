@@ -1,21 +1,10 @@
 // 10.000 screen.
 import { scoreDice, bestKeep } from '../games/tiotusind.js';
+import { t, num as n } from '../i18n/index.js';
 import { die } from './common.js';
 
-const n = (v) => v.toLocaleString('da-DK');
-
-export function howTo(r) {
-  return `
-    <li>On your turn, roll five dice. Set aside at least one scoring die, then roll the rest again or <b>bank</b> your points.</li>
-    <li>If a roll has nothing that scores, you lose everything from that turn.</li>
-    <li>Scores: ${die(1, 'die-inline')} 100 · ${die(5, 'die-inline')} 50 · three of a kind = face × 100 (three ${die(1, 'die-inline')} = 1.000) · four of a kind 1.500 · five of a kind 2.000${r.straights ? ' · straight 2.000' : ''}${r.fullHouse ? ' · full house 2.500' : ''}. Combinations count only within one roll.</li>
-    ${r.openingMin ? `<li>You need ${n(r.openingMin)} in one turn before you’re on the board.</li>` : ''}
-    ${r.hotDice ? '<li>When all five dice have scored, you can roll all five again.</li>' : ''}
-    <li>The first to ${n(r.target)} gets the others one last turn each. Highest score wins.</li>`;
-}
-
 export function rulesSummary(r) {
-  return [`to ${n(r.target)}`, r.openingMin ? `${r.openingMin} to start` : null, r.straights ? 'straights' : null, r.fullHouse ? 'full house' : null, r.hotDice ? 'hot dice' : null].filter(Boolean).join(' · ');
+  return [t('to {n}', { n: n(r.target) }), r.openingMin ? t('{n} to start', { n: n(r.openingMin) }) : null, r.straights ? t('straights') : null, r.fullHouse ? t('full house') : null, r.hotDice ? t('hot dice') : null].filter(Boolean).join(' · ');
 }
 
 export const isMyTurn = (g, me) => g.phase === 'turn' && g.turn === me;
@@ -25,68 +14,68 @@ export function render(g, ctx) {
   const top = Math.max(...g.players.map((p) => p.score));
   const board = `<ul class="players scoreboard">${g.order.map((pid) => g.players.find((p) => p.id === pid)).filter(Boolean).map((p) => `
     <li class="player ${g.turn === p.id ? 'turn' : ''}">
-      <span class="pname">${ctx.name(p.id)}${p.id === ctx.me ? ' <span class="you">(you)</span>' : ''}</span>
-      <span class="cups muted">${p.score === 0 && g.rules.openingMin ? 'not on the board' : ''}${g.finalRound?.remaining.includes(p.id) ? 'last turn' : ''}${ctx.connected(p.id) ? '' : ' · offline'}</span>
+      <span class="pname">${ctx.name(p.id)}${p.id === ctx.me ? ` <span class="you">(${t('you')})</span>` : ''}</span>
+      <span class="cups muted">${p.score === 0 && g.rules.openingMin ? t('not on the board') : ''}${g.finalRound?.remaining.includes(p.id) ? t('last turn') : ''}${ctx.connected(p.id) ? '' : ` · ${t('offline')}`}</span>
       <span class="score ${p.score === top && top > 0 ? 'lead' : ''}">${n(p.score)}</span>
     </li>`).join('')}</ul>`;
 
   let event = '';
   const e = g.event;
-  if (e?.type === 'bust') event = `<div class="event bust">${e.by === ctx.me ? 'You' : ctx.name(e.by)} rolled ${e.roll.map((d) => die(d, 'die-inline')).join('')}. Nothing scores${e.lost ? `, ${n(e.lost)} lost` : ''}.</div>`;
-  if (e?.type === 'bank') event = `<div class="event bank">${e.by === ctx.me ? 'You' : ctx.name(e.by)} banked ${n(e.points)}.${e.reached ? ' Everyone else gets one last turn!' : ''}</div>`;
-  const final = g.finalRound && g.phase === 'turn' ? `<div class="event">Last round: ${ctx.name(g.finalRound.by)} is on ${n(g.players.find((p) => p.id === g.finalRound.by)?.score || 0)}.</div>` : '';
+  const who = (id) => (id === ctx.me ? t('You') : ctx.name(id));
+  if (e?.type === 'bust') event = `<div class="event bust">${t('{name} rolled {dice}. Nothing scores.', { name: who(e.by), dice: e.roll.map((d) => die(d, 'die-inline')).join('') })}${e.lost ? ` ${t('{n} lost.', { n: n(e.lost) })}` : ''}</div>`;
+  if (e?.type === 'bank') event = `<div class="event bank">${t('{name} banked {n}.', { name: who(e.by), n: n(e.points) })}${e.reached ? ` ${t('Everyone else gets one last turn!')}` : ''}</div>`;
+  const final = g.finalRound && g.phase === 'turn' ? `<div class="event">${t('Last round: {name} is on {n}.', { name: ctx.name(g.finalRound.by), n: n(g.players.find((p) => p.id === g.finalRound.by)?.score || 0) })}</div>` : '';
 
   if (g.phase === 'over') {
     const w = g.result.winners;
-    const line = w.length > 1 ? `${w.map(ctx.name).join(' and ')} share the win with ${n(g.result.top)}.`
-      : w[0] === ctx.me ? `You win with ${n(g.result.top)}!` : `${ctx.name(w[0])} wins with ${n(g.result.top)}.`;
+    const line = w.length > 1 ? t('{names} share the win with {n}.', { names: w.map(ctx.name).join(' & '), n: n(g.result.top) })
+      : w[0] === ctx.me ? t('You win with {n}!', { n: n(g.result.top) }) : t('{name} wins with {n}.', { name: ctx.name(w[0]), n: n(g.result.top) });
     return board + event + ctx.gameOver(line);
   }
 
   const myTurn = g.turn === ctx.me;
   const kept = g.kept.length
-    ? `<div class="kept"><span class="eyebrow">Set aside</span>${g.kept.map((k) => (k.hot ? '<span class="pill pill-trappe">hot dice</span>' : `<span class="kept-group">${k.dice.map((d) => die(d, 'die-small')).join('')}<small>${n(k.pts)}</small></span>`)).join('')}</div>`
+    ? `<div class="kept"><span class="eyebrow">${t('Set aside')}</span>${g.kept.map((k) => (k.hot ? `<span class="pill pill-trappe">${t('hot dice')}</span>` : `<span class="kept-group">${k.dice.map((d) => die(d, 'die-small')).join('')}<small>${n(k.pts)}</small></span>`)).join('')}</div>`
     : '';
 
   const rollKey = `${g.turn}:${g.roll.join('')}:${g.kept.length}`;
   if (ui.rollKey !== rollKey) { ui.sel = []; ui.rollKey = rollKey; }
   const sel = ui.sel;
-  const selDice = sel.map((i) => g.roll[i]);
-  const selPts = sel.length ? scoreDice(selDice, g.rules) : 0;
+  const selPts = sel.length ? scoreDice(sel.map((i) => g.roll[i]), g.rules) : 0;
   const after = g.turnPoints + (selPts || 0);
 
   const rollDice = g.roll.length
     ? `<div class="hand"><div class="hand-dice">${g.roll.map((d, i) => (myTurn
-      ? `<button class="pickdie ${sel.includes(i) ? 'on' : ''}" data-g="sel" data-i="${i}" aria-pressed="${sel.includes(i)}" aria-label="Die ${d}">${die(d)}</button>`
+      ? `<button class="pickdie ${sel.includes(i) ? 'on' : ''}" data-g="sel" data-i="${i}" aria-pressed="${sel.includes(i)}" aria-label="${d}">${die(d)}</button>`
       : die(d))).join('')}</div></div>`
-    : `<div class="hand"><p class="muted">${myTurn ? 'Your turn. Roll the dice!' : `${ctx.name(g.turn)} is about to roll…`}</p></div>`;
+    : `<div class="hand"><p class="muted">${myTurn ? t('Your turn. Roll the dice!') : t('{name} is about to roll…', { name: ctx.name(g.turn) })}</p></div>`;
 
-  const turnLine = `<div class="current"><p class="eyebrow">${myTurn ? 'Your turn' : `${ctx.name(g.turn)}’s turn`}</p><p class="current-bid">${n(myTurn ? after : g.turnPoints)}</p></div>`;
+  const turnLine = `<div class="current"><p class="eyebrow">${myTurn ? t('Your turn') : t('{name}’s turn', { name: ctx.name(g.turn) })}</p><p class="current-bid">${n(myTurn ? after : g.turnPoints)}</p></div>`;
 
-  if (!myTurn) return board + event + final + turnLine + kept + rollDice + `<div class="waiting">Waiting for <b>${ctx.name(g.turn)}</b>…</div>`;
+  if (!myTurn) return board + event + final + turnLine + kept + rollDice + `<div class="waiting">${t('Waiting for <b>{name}</b>…', { name: ctx.name(g.turn) })}</div>`;
 
   let actions;
   if (!g.roll.length) {
-    actions = `<button class="btn btn-primary btn-block" data-g="roll">Roll ${g.diceLeft} dice</button>`;
+    actions = `<button class="btn btn-primary btn-block" data-g="roll">${t('Roll {n} dice', { n: g.diceLeft })}</button>`;
   } else {
     const valid = sel.length > 0 && selPts !== null;
     const left = g.diceLeft - sel.length;
     const rollCount = left === 0 && g.rules.hotDice ? 5 : left;
     const me = g.players.find((p) => p.id === ctx.me);
     const canBank = valid && (me.score > 0 || after >= g.rules.openingMin);
-    let hint = 'Tap the dice you want to set aside.';
-    if (sel.length && selPts === null) hint = 'Some of those dice don’t score.';
-    else if (valid && !canBank) hint = `You need ${n(g.rules.openingMin)} in one turn to get on the board.`;
-    else if (valid) hint = `${n(selPts)} from these dice.`;
+    let hint = t('Tap the dice you want to set aside.');
+    if (sel.length && selPts === null) hint = t('Some of those dice don’t score.');
+    else if (valid && !canBank) hint = t('You need {n} in one turn to get on the board.', { n: n(g.rules.openingMin) });
+    else if (valid) hint = t('{n} from these dice.', { n: n(selPts) });
     const best = bestKeep(g.roll, g.rules);
     actions = `
       <div class="actions card">
         <p class="hint">${hint}</p>
         <div class="act-row">
-          <button class="btn" data-g="roll" ${valid && rollCount > 0 ? '' : 'disabled'}>Roll ${rollCount || ''} ${rollCount === 1 ? 'die' : 'dice'}</button>
-          <button class="btn btn-primary" data-g="bank" ${canBank ? '' : 'disabled'}>Bank ${valid ? n(after) : ''}</button>
+          <button class="btn" data-g="roll" ${valid && rollCount > 0 ? '' : 'disabled'}>${rollCount === 1 ? t('Roll 1 die') : t('Roll {n} dice', { n: rollCount || '' })}</button>
+          <button class="btn btn-primary" data-g="bank" ${canBank ? '' : 'disabled'}>${t('Bank')} ${valid ? n(after) : ''}</button>
         </div>
-        ${best.pts && !sel.length ? `<button class="btn btn-quiet btn-small" data-g="best">Pick the best (${n(best.pts)})</button>` : ''}
+        ${best.pts && !sel.length ? `<button class="btn btn-quiet btn-small" data-g="best">${t('Pick the best ({n})', { n: n(best.pts) })}</button>` : ''}
       </div>`;
   }
   return board + event + final + turnLine + kept + rollDice + actions;

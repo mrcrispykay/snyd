@@ -435,3 +435,46 @@ textarea.rule-text, input.rule-text {
 
 /* ---------- computer players ---------- */
 .pill-bot { color: var(--amber); border-color: color-mix(in srgb, var(--amber) 45%, var(--line)); }
+
+/* ---------- language picker ---------- */
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.lang select {
+  appearance: none; font: 700 0.8rem var(--font-body); color: var(--fg-2); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; cursor: pointer; min-height: 32px;
+}
+.lang select:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+.brand-row { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+.lang-row { display: flex; justify-content: center; padding-top: 4px; }
+.game-title { font: 900 1.6rem/1 var(--font-display); text-transform: uppercase; letter-spacing: 0.02em; margin: -4px 0 0; }
+
+/* ---------- menu items with rules ---------- */
+.menu-item {
+  appearance: none; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center; width: 100%;
+  background: none; border: 0; color: inherit; font: inherit; text-align: left; padding: 0; cursor: pointer;
+}
+.menu-item:focus-visible { outline: 2px solid var(--amber); outline-offset: 4px; border-radius: 8px; }
+.menu-item .info { width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--line); display: grid; place-items: center; color: var(--amber); font-weight: 800; font-size: 0.85rem; }
+.menu-list .menu-item > span > b { font: 800 1.35rem/1.1 var(--font-display); letter-spacing: 0.02em; }
+.menu-list .menu-item > span > small { display: block; color: var(--muted); font-size: 0.85rem; }
+
+/* ---------- rules sheet ---------- */
+.sheet-backdrop { position: fixed; inset: 0; background: rgba(10, 6, 4, 0.7); z-index: 20; }
+.sheet {
+  position: fixed; z-index: 21; left: 50%; transform: translateX(-50%); bottom: 0;
+  width: min(100%, 32rem); max-height: 88vh; overflow-y: auto; overscroll-behavior: contain;
+  background: var(--surface); border: 1px solid var(--line); border-bottom: 0; border-radius: 18px 18px 0 0;
+  padding: 18px 18px calc(env(safe-area-inset-bottom, 0px) + 18px); display: flex; flex-direction: column; gap: 10px;
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.45);
+}
+.sheet-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: start; }
+.sheet-head h2 { font: 900 2rem/1 var(--font-display); text-transform: uppercase; margin: 0; letter-spacing: 0.02em; }
+.sheet .aka { margin-top: 4px; color: var(--muted); font-size: 0.85rem; }
+.sheet .aka b { color: var(--fg-2); }
+.sheet-meta { color: var(--amber); font-size: 0.85rem; font-weight: 700; }
+.sheet h3 { font: 800 1.1rem var(--font-display); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 6px 0 0; }
+.sheet p, .sheet li { color: var(--fg-2); }
+.sheet b { color: var(--fg); }
+.sheet ol { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 8px; }
+.sheet .die-inline { width: 1.1em; height: 1.1em; vertical-align: -0.2em; }
+.sheet-close { font-size: 1.1rem; }
+@media (min-width: 40rem) { .sheet { bottom: auto; top: 50%; transform: translate(-50%, -50%); border-radius: 18px; border-bottom: 1px solid var(--line); } }

@@ -16,7 +16,7 @@ export const defaults = {
 };
 
 export const ruleInfo = {
-  builtIn: { label: 'Built-in prompts', help: `${MOST_LIKELY.length} prompts. Turn off to use only your own.` },
+  builtIn: { label: 'Built-in prompts', help: '{n} prompts. Turn off to use only your own.', helpParams: { n: MOST_LIKELY.length } },
   selfVote: { label: 'Can vote for yourself' },
   extra: { label: 'Your own prompts', help: 'One per line. “Who is most likely to …”', text: true, multiline: true },
 };
@@ -36,7 +36,7 @@ export function start(playerIds, rules, rand = Math.random) {
 }
 
 export function apply(s, pid, action, rand = Math.random) {
-  const fail = (msg) => { throw new Error(msg); };
+  const fail = (msg, params) => { throw Object.assign(new Error(msg), { params }); };
   switch (action.type) {
     case 'vote': {
       if (s.phase !== 'voting') fail('Voting is closed.');

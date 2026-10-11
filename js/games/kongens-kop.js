@@ -49,7 +49,7 @@ export function start(playerIds, rules, rand = Math.random) {
 }
 
 export function apply(s, pid, action) {
-  const fail = (msg) => { throw new Error(msg); };
+  const fail = (msg, params) => { throw Object.assign(new Error(msg), { params }); };
   if (action.type !== 'draw') fail('Unknown action.');
   if (s.phase !== 'play') fail('The game is over.');
   if (s.turn !== pid) fail('It’s not your turn.');

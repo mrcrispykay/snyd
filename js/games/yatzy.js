@@ -83,7 +83,7 @@ function checkOver(s) {
 }
 
 export function apply(s, pid, action, rand = Math.random) {
-  const fail = (msg) => { throw new Error(msg); };
+  const fail = (msg, params) => { throw Object.assign(new Error(msg), { params }); };
   if (s.phase !== 'play') fail('The game is over.');
   if (!s.order.includes(pid)) fail('You’re not in this game.');
   if (s.rules.mode === 'turns' && s.turn !== pid) fail('It’s not your turn.');

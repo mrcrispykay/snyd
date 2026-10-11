@@ -30,6 +30,18 @@ The host's phone runs the games. The phones connect directly to each other over 
 
 **Keep the host's phone on the game screen.** If the host locks the phone or switches apps for long, the others lose the table until the host comes back. Players who drop out or reload rejoin their seat automatically, and rejoining with the same name and code also works. Anyone who arrives mid-game watches and gets dealt into the next one.
 
+## Languages
+
+Every phone picks its own language, so one table can mix languages: **Dansk, English, Deutsch, Svenska, Norsk**. The language is detected from the phone and can be changed with the picker on the start screen, in the lobby and during a game.
+
+Games use their local names where one exists, for example Snyd = Liar's Dice = Bluff = Luring, Meyer = Mia = Mäxchen, Yatzy = Yahtzee = Kniffel, Bussen = Ride the Bus = Busfahrer, Kongens kop = King's Cup. The built-in party prompts and the default Kongens kop card rules are translated too. Rules the host writes themselves are shown exactly as typed.
+
+## Rules
+
+Tap any game on the start screen to read its rules. In the lobby, use **How to play …**, and during a game use **Rules** at the top. The rules sheet shows the goal, how a turn goes, how the game ends, and the house rules currently in play.
+
+To add a language, copy `js/i18n/da.js` (keys are the English text), translate it, and add it to `LANGS` in `js/i18n/index.js`. `node scripts/i18n-keys.mjs <lang>` lists any missing texts, and the tests fail if a text, prompt or rule is missing.
+
 ## Computer players
 
 In the lobby, the host can tap **Add computer player**. Bots sit at the table like anyone else, so you can fill the fourth seat in Sjavs or play on your own. They play every dice and card game. They sit out the two party games, because a random vote adds nothing.

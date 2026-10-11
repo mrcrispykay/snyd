@@ -91,7 +91,7 @@ function endTurn(s) {
 }
 
 export function apply(s, pid, action, rand = Math.random) {
-  const fail = (msg) => { throw new Error(msg); };
+  const fail = (msg, params) => { throw Object.assign(new Error(msg), { params }); };
   switch (action.type) {
     case 'roll': {
       if (s.phase !== 'turn' || s.turn !== pid) fail('It’s not your turn.');

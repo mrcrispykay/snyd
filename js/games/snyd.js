@@ -74,11 +74,12 @@ export function isHigher(bid, prev) {
 }
 
 export function validBid(state, bid) {
-  if (!Number.isInteger(bid.count) || !Number.isInteger(bid.face)) return 'Pick a number and a face.';
-  if (!biddableFaces(state.rules).includes(bid.face)) return 'Ones are wild and can’t be bid.';
-  if (bid.count < 1) return 'Bid at least one die.';
-  if (!state.bid && bid.count < state.rules.minOpeningCount) return `Open with at least ${state.rules.minOpeningCount}.`;
-  if (!isHigher(bid, state.bid)) return 'Bid more dice, or the same number with a higher face.';
+  const why = (key, params) => ({ key, params });
+  if (!Number.isInteger(bid.count) || !Number.isInteger(bid.face)) return why('Pick a number and a face.');
+  if (!biddableFaces(state.rules).includes(bid.face)) return why('Ones are wild and can’t be bid.');
+  if (bid.count < 1) return why('Bid at least one die.');
+  if (!state.bid && bid.count < state.rules.minOpeningCount) return why('Open with at least {n}.', { n: state.rules.minOpeningCount });
+  if (!isHigher(bid, state.bid)) return why('Bid more dice, or the same number with a higher face.');
   return null;
 }
 
@@ -132,14 +133,14 @@ export function start(playerIds, rules, rand = Math.random) {
 
 /** Applies a game action to `s` in place. Throws an Error with a readable message if not allowed. */
 export function apply(s, playerId, action, rand = Math.random) {
-  const fail = (msg) => { throw new Error(msg); };
+  const fail = (msg, params) => { throw Object.assign(new Error(msg), { params }); };
   switch (action.type) {
     case 'bid': {
       if (s.phase !== 'bidding') fail('Not bidding right now.');
       if (s.turn !== playerId) fail('It’s not your turn.');
       const bid = { count: Number(action.count), face: Number(action.face) };
       const err = validBid(s, bid);
-      if (err) fail(err);
+      if (err) fail(err.key, err.params);
       s.bid = { ...bid, by: playerId };
       s.history.push({ ...s.bid });
       s.turn = nextActiveAfter(s, playerId);

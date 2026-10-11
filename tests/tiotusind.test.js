@@ -49,7 +49,7 @@ function rigged(roll, turnPoints = 0) {
 
 test('banking under the opening minimum is refused', () => {
   const s = rigged([1, 2, 3, 4, 6]);
-  assert.throws(() => g.apply(structuredClone(s), 'a', { type: 'bank', keep: [0] }), /400/);
+  assert.throws(() => g.apply(structuredClone(s), 'a', { type: 'bank', keep: [0] }), (e) => e.params.n === 400);
 });
 
 test('banking adds turn points and passes the dice', () => {

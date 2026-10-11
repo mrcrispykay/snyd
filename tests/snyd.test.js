@@ -56,7 +56,7 @@ test('bid ordering: more dice, or same count with higher face', () => {
 
 test('ones cannot be bid while they are wild', () => {
   const s = game();
-  assert.match(validBid(s, { count: 2, face: 1 }), /wild/);
+  assert.match(validBid(s, { count: 2, face: 1 }).key, /wild/);
   assert.equal(validBid({ ...s, rules: { ...s.rules, onesWild: false } }, { count: 2, face: 1 }), null);
 });
 

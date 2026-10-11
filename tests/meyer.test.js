@@ -59,7 +59,7 @@ test('you can’t lift after rolling, or announce lower', () => {
   s = play(s, 'a', { type: 'announce', key: '55' });
   s = play(s, 'b', { type: 'roll' });
   assert.throws(() => play(s, 'b', { type: 'lift' }), /already rolled/);
-  assert.throws(() => play(s, 'b', { type: 'announce', key: '54' }), /at least/);
+  assert.throws(() => play(s, 'b', { type: 'announce', key: '54' }), /beat the last/);
 });
 
 test('passing blind keeps the claim and the next lift checks the new dice', () => {

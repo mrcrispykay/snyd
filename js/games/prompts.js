@@ -86,8 +86,10 @@ export const NEVER = [
   'blamed a fart on someone else',
 ];
 
+/** Built-in prompts are stored as their index (translated on each phone); the host's own prompts as text. */
 export function promptDeck(builtIn, extra, useBuiltIn, shuffle, rand) {
   const own = String(extra || '').split('\n').map((x) => x.trim()).filter(Boolean);
-  const list = [...(useBuiltIn ? builtIn : []), ...own];
-  return shuffle(list.length ? list : builtIn, rand);
+  const ids = builtIn.map((_, i) => i);
+  const list = [...(useBuiltIn ? ids : []), ...own];
+  return shuffle(list.length ? list : ids, rand);
 }
